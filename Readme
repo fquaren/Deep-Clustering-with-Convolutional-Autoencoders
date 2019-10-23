@@ -1,0 +1,7 @@
+Just words...
+
+L'idea è utilizzare U-Net CNN per fare autoencoding. Inserirsco un'immagine e mi restituisce l'immagine stessa e le feature. Con queste feature voglio fare un clustering non supervisionato delle immagini di CT, PET e MRI. 
+
+Essendo non supervisionato devo scegliere bene la metrica che determina quando la rete ha fatto una scelta giusta e quando no.
+
+
