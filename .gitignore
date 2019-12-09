@@ -1,3 +1,4 @@
-/Source/Code/data
+Source/Code/data
 Source/Code/.ipynb_checkpoints/
-
+Source/Code/results/
+Source/Code/__pycache__/
