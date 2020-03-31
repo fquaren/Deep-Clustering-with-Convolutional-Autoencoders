@@ -1,5 +1,5 @@
-src/Code/data
-src/Code/.ipynb_checkpoints/
-src/Code/results/
-src/Code/__pycache__/
-src/Code/model.png
+src/data
+src/.ipynb_checkpoints/
+src/results/
+src/__pycache__/
+src/model.png
