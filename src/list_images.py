@@ -10,7 +10,7 @@ paths = ['../data/CT/', '../data/MRI', '../data/PET/']
 file_names_path = 'data/images/'
 
 # split parameters
-train_size=0.4
+train_size=0.6
 val_size=0.4
 
 # read the files from data dir
@@ -30,9 +30,9 @@ def split_images (train_size, val_size):
     MRI_train, MRI_test = train_test_split(images[paths[1]], train_size=train_size)
     PET_train, PET_test = train_test_split(images[paths[2]], train_size=train_size)
     # split train validation
-    CT_val, CT_test = train_test_split(CT_test, train_size=(val_size)/(1-train_size))
-    MRI_val, MRI_test = train_test_split(MRI_test, train_size=(val_size)/(1-train_size))
-    PET_val, PET_test = train_test_split(PET_test, train_size=(val_size)/(1-train_size))
+    CT_val, CT_test = train_test_split(CT_test, train_size=val_size)
+    MRI_val, MRI_test = train_test_split(MRI_test, train_size=val_size)
+    PET_val, PET_test = train_test_split(PET_test, train_size=val_size)
     # create list of file names
     train_file_names = CT_train + MRI_train + PET_train
     val_file_names = CT_val + MRI_val + PET_val
