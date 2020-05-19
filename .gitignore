@@ -1,4 +1,4 @@
-src/data
+src/data/
 src/.ipynb_checkpoints/
 src/results/
 src/__pycache__/
