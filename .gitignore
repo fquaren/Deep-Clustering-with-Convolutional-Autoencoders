@@ -3,3 +3,7 @@ src/.ipynb_checkpoints/
 src/results/
 src/__pycache__/
 src/model.png
+src/models
+src/logs
+data
+src/old
