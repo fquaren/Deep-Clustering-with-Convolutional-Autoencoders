@@ -1,10 +1,10 @@
-src/data/
 src/.ipynb_checkpoints/
 src/results/
-src/__pycache__/
+__pycache__
 src/model.png
 src/models
 src/logs
-data
+data/processed
+data/raw
 src/old
 src/figures
