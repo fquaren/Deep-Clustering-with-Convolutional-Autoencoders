@@ -1,0 +1,5 @@
+TODO
+
+* add 2d layer for cluster plotting
+* make notebook into a python script 
+* experiment on hyperparameters to find the best results
