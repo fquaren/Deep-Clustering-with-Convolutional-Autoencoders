@@ -1,4 +1,4 @@
-src/.ipynb_checkpoints/
+.ipynb_checkpoints/
 src/results/
 __pycache__
 src/model.png
@@ -8,3 +8,4 @@ data/processed
 data/raw
 src/old
 src/figures
+.vscode

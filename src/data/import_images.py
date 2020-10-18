@@ -104,7 +104,8 @@ struct = ['training dataset', 'validation dataset', 'test dataset']
 for d, name, s in zip(processed_dirs, _file_names, struct):
     a = len(
         [name for name in os.listdir(os.path.join(processed_data, d))
-            if os.path.isfile(os.path.join(os.path.join(processed_data, d), name))])
+            if os.path.isfile(
+                os.path.join(os.path.join(processed_data, d), name))])
     if a != len(name):
         print('ERROR, i numberi non combaciano in ', s)
     else:
@@ -117,3 +118,5 @@ for d, name, s in zip(processed_dirs, _file_names, struct):
 data_aumgentation(j, processed_data, processed_dirs, train_file_names)
 check_data(
     processed_data, processed_dirs, val_file_names, test_file_names)
+
+# TODO add csv with data settings
