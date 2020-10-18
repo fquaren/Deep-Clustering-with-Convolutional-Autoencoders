@@ -1,9 +1,6 @@
 .ipynb_checkpoints/
 src/results/
 __pycache__
-src/model.png
-src/models
-src/logs
 data/processed
 data/raw
 src/old
