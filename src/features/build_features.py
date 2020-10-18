@@ -1,3 +1,5 @@
+# Build feature for modelling.
+
 import random
 from os import listdir
 import cv2
