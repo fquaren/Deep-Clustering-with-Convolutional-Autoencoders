@@ -6,9 +6,9 @@ import cv2
 import numpy as np
 from skimage import io
 from tqdm import tqdm
+import config as cfg
 
-
-processed_data = '../../data/processed/'
+processed_data = cfg.processed_data
 
 
 def get_filenames_list(processed_data):
@@ -75,7 +75,7 @@ def get_filenames_list(processed_data):
     for el in _final_file_names:
         random.shuffle(el)
 
-    print("DATASET")
+    print("FINAL DATASETS")
     print("Training", len(train_final_file_names), ", Validation:", len(
         val_final_file_names), ", Test:", len(test_final_file_names))
 
@@ -132,14 +132,8 @@ def create_tensors(_final_file_names, directories):
     x_val, y_val = read_images(val_paths)
     x_test, y_test = read_images(test_paths)
 
-    print(x_train.shape)
-    print(y_train.shape)
-    print(x_val.shape)
-    print(x_test.shape)
+    print('Train dataset:', x_train.shape)
+    print('Validation dataset:', x_val.shape)
+    print('Test dataset:', x_test.shape)
 
     return x_train, y_train, x_val, y_val, x_test, y_test
-
-
-directories, file_list = get_filenames_list(processed_data)
-x_train, y_train, x_val, y_val, x_test, y_test = create_tensors(
-    file_list, directories)

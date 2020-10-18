@@ -18,16 +18,12 @@ def copyImages(sources, _file_names, directory):
 
 # SETTINGS
 
-# Images
-
 # raw data paths
 CT = '../../data/raw/CT/'
 MRI = '../../data/raw/MRI/'
 PET = '../../data/raw/PET/'
 train_size = 0.5
 val_size = 0.7
-
-# Data augmentation
 
 # 0.7, 0.2 senza augmentation
 # 0.4, 0.4 con augmentation (j=2)
@@ -42,11 +38,7 @@ myPaths = [CT, MRI, PET]
 myDict = {CT: [], MRI: [], PET: []}
 for path in myPaths:
     myDict[path] = [f for f in listdir(path) if isfile(join(path, f))]
-
-
 # Split data in train, validation and test datasets
-train_size = 0.5
-val_size = 0.7
 # split train test
 CT_train, CT_test = train_test_split(
     myDict[myPaths[0]], train_size=train_size)
@@ -74,18 +66,15 @@ print('Number of validation images:', len(
 print('Number of test images:', len(test_file_names), '= %.0f' % percTest, '%')
 
 
-# Make processed and copy images in train, val and test
+# Make processed data folder and copy images in train, val and test
 # delete existing processed data
 processed_data = '../../data/processed'
 if os.path.exists(processed_data):
-    print('Deleting previous data in {}'.format(processed_data))
     try:
         shutil.rmtree(processed_data)
     except:
         raise
-print('Delete operation completed successfully.')
 # make preprocessed/
-print('Creating processed data directories...')
 processed_dirs = [
     'train',
     'val',
@@ -93,19 +82,16 @@ processed_dirs = [
 ]
 for d in processed_dirs:
     os.makedirs(os.path.join(processed_data, d))
-    print('created ', os.path.join(processed_data, d))
 
 # Copy images in relative dir
 _file_names = [train_file_names, val_file_names, test_file_names]
 for name, directory in zip(_file_names, processed_dirs):
     copyImages(myPaths, name, os.path.join(processed_data, directory))
 # check
-struct = ['training dataset', 'validation dataset', 'test dataset']
+struct = ['training dataset', 'validation images', 'test images']
 for d, name, s in zip(processed_dirs, _file_names, struct):
-    a = len(
-        [name for name in os.listdir(os.path.join(processed_data, d))
-            if os.path.isfile(
-                os.path.join(os.path.join(processed_data, d), name))])
+    a = len([name for name in os.listdir(os.path.join(processed_data, d))
+            if os.path.isfile(os.path.join(os.path.join(processed_data, d), name))])
     if a != len(name):
         print('ERROR, i numberi non combaciano in ', s)
     else:
@@ -116,7 +102,4 @@ for d, name, s in zip(processed_dirs, _file_names, struct):
 # DATA AUGMENTATION
 
 data_aumgentation(j, processed_data, processed_dirs, train_file_names)
-check_data(
-    processed_data, processed_dirs, val_file_names, test_file_names)
-
-# TODO add csv with data settings
+check_data(processed_data, processed_dirs, val_file_names, test_file_names)
