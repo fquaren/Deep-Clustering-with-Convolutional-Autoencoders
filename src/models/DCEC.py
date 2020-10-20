@@ -1,9 +1,10 @@
 
 from keras.models import Model
-from nets import CAE_Conv2DTranspose
 from clustering_layer import ClusteringLayer
-import config as cfg  # TODO fix
-
+import sys
+sys.path.append('/home/phil/unimib/tesi/src')
+from nets import CAE_Conv2DTranspose
+import config as cfg
 
 n_clusters = cfg.n_clusters
 
