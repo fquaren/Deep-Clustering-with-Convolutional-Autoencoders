@@ -6,3 +6,6 @@ data/raw
 src/old
 src/figures
 .vscode
+experiments
+reports/figures
+models/test

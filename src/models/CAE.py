@@ -1,6 +1,8 @@
 import predict
 from features.build_features import get_filenames_list, create_tensors
-import config as cfg  # TODO to fix
+import sys
+sys.path.append('/home/phil/unimib/tesi/src')
+import config as cfg
 
 
 def pretrainCAE(x_train, x_val, batch_size, pretrain_epochs, my_callbacks):

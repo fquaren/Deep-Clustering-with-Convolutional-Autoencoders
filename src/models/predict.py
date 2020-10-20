@@ -2,7 +2,9 @@ import os
 import random
 from matplotlib import pyplot as plt
 import cv2
-import config as cfg  # TODO to fix
+import sys
+sys.path.append('/home/phil/unimib/tesi/src')
+import config as cfg
 
 
 def get_list_per_type(directory, scan):
