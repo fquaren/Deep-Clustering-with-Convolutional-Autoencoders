@@ -18,7 +18,7 @@ exp = 'test'
 
 cae_weights = os.path.join(models, exp,'CAE_weights')
 
-# Pretrain settings
+# Pretrain CAE settings
 model = nets.CAE_Conv2DTranspose()
 init = VarianceScaling(
     scale=1./3.,
@@ -26,7 +26,7 @@ init = VarianceScaling(
     distribution='uniform'
 )
 pretrain_epochs = 1000
-batch_size = 128
+cae_batch_size = 32
 my_callbacks = [
     EarlyStopping(patience=10, monitor='val_loss'),
     TensorBoard(log_dir=os.path.join(experiments, exp)),
@@ -40,4 +40,10 @@ my_callbacks = [
 optim = 'adam'
 cae_loss = 'mse'
 
+# Train DCEC settings
+dcec_batch_size = 16
+maxiter = 10000
+update_interval = 200
+save_interval = 1000
+tol = 0.01
 gamma = 0.1

@@ -3,12 +3,9 @@ from keras.models import Model
 
 
 def CAE_Conv2DTranspose(input_shape=(192, 192, 1), filters=[16, 32, 64, 128, 30]):
-
     input_img = Input(shape=input_shape)
-
     # Encoder
-    x = Conv2D(
-        filters[0], 5, strides=2, padding='same', activation='relu', name='conv1', input_shape=input_shape)(input_img)
+    x = Conv2D(filters[0], 5, strides=2, padding='same', activation='relu', name='conv1', input_shape=input_shape)(input_img)
     x = Conv2D(filters[1], 3, strides=2, padding='same', activation='relu', name='conv2')(x)
     x = Conv2D(filters[2], 3, strides=2, padding='same', activation='relu', name='conv3')(x)
     x = Flatten(name='flatten_1')(x)

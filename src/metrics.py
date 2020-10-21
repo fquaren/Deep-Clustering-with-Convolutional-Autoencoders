@@ -23,3 +23,9 @@ def acc(y_true, y_pred):
         w[y_pred[i], y_true[i]] += 1
     row_ind, col_ind = linear_assignment(w.max() - w)
     return sum([w[i, j] for (i, j) in zip(row_ind, col_ind)]) * 1.0 / y_pred.size
+
+
+# Student's distribution (see paper)
+def target_distribution(q):
+    weight = q ** 2 / q.sum(0)
+    return (weight.T / weight.sum(1)).T
