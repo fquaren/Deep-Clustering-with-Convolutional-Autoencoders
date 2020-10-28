@@ -1,0 +1,26 @@
+*** Abstract ***
+
+
+*** Introduction ***
+-> Description:
+
+* machine learning -> deep learning
+    * neural networks
+    * convolutions
+    * deep learning
+    * unsupervised deep learning
+    * clustering for classification 
+    
+* deep learning in medical sciences
+    * use cases for deep learning in medical sciences
+    * CT, MRI, PET -> focus on how images are different from one
+
+*** "Methods" (placeholder) ***
+    * description of model
+    * image of the model using PlotNN: https://github.com/HarisIqbal88/PlotNeuralNet
+
+*** "Results" (placeholder) ***
+    * description of results on CT, MRI, PET dataset
+    * plots with metrics, images of predictions
+
+*** Conclusions ***
