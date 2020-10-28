@@ -41,7 +41,7 @@ optim = 'adam'
 cae_loss = 'mse'
 
 # Train DCEC settings
-dcec_batch_size = 16
+dcec_bs = 16
 maxiter = 10000
 update_interval = 200
 save_interval = 1000
