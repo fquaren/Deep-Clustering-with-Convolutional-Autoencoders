@@ -8,7 +8,7 @@ import random
 from nets import CAE_Conv2DTranspose, ClusteringLayer
 import config as cfg
 from metrics import target_distribution, nmi, ari, acc
-from features.build_features import get_filenames_list, create_tensors
+from build_features import get_filenames_list, create_tensors
 
 
 autoencoder, encoder = CAE_Conv2DTranspose()
@@ -28,17 +28,14 @@ x_train, y_train, x_val, y_val, x_test, y_test = create_tensors(
 
 # Initialize cluster centers using k-means
 print('initializing cluster centers using k-means...')
-kmeans = KMeans(n_clusters=cfg.n_clusters, n_init=1000)
+kmeans = KMeans(n_clusters=cfg.n_clusters, n_init=50)
 
 # predict with kmeans
 print('predicting with k-means...')
 features = encoder.predict(x_train)[1]
-features = np.reshape(features, newshape=(features.shape[0], -1))
-
 y_pred = kmeans.fit_predict(features)
 y_pred_last = y_pred.copy()
 centers = kmeans.cluster_centers_
-n_iter = kmeans.n_iter_
 
 model.get_layer(name='clustering').set_weights([centers])
 
@@ -172,12 +169,12 @@ for ite in tqdm(range(int(cfg.maxiter))):
         # save DCEC model checkpoints
         # print('saving model to:', os.path.join(
         #     cfg.models, cfg.exp, 'dcec_model_' + str(ite) + '.h5'))
-        model.save_weights(
-            os.path.join(cfg.models, cfg.exp, 'dcec_model_' + str(ite) + '.h5'))
+        model.save_weights(os.path.join(cfg.models, cfg.exp, 'dcec_model_' + str(ite) + '.h5'))
     ite += 1
 
 # save the trained model
-print('saving model to:', os.path.join(cfg.models, cfg.exp, 'dcec_model_final.h5'))
+print('saving model to:', os.path.join(
+    cfg.models, cfg.exp, 'dcec_model_final.h5'))
 model.save_weights(os.path.join(cfg.models, 'dcec_model_final.h5'))
 
 # TODO save logs for plotting later
@@ -232,7 +229,7 @@ plt.savefig(os.path.join(cfg.figures, cfg.exp, 'loss_and_acc'))
 model.load_weights(os.path.join(cfg.models, 'dcec_model_final.h5'))
 
 pred_encoder = model.predict(x_test)[0]
-
+import pdb; pdb.set_trace()
 # testing
 kmeans = KMeans(n_clusters=3, n_init=50)
 y_pred = kmeans.fit_predict(pred_encoder)

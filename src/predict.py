@@ -1,9 +1,6 @@
 import os
 from matplotlib import pyplot as plt
 import cv2
-import sys
-sys.path.append('/home/phil/unimib/tesi/src')
-import config as cfg
 
 
 def get_list_per_type(directory, scan):
@@ -22,7 +19,8 @@ def pred(net, weigths, directory, scans, figures, exp, n):
         autoencoder, encoder = net
         autoencoder.load_weights(weigths)
         img = get_image(get_list_per_type(directory, scan), directory, n)
-        img = cv2.resize(img, dsize=(192, 192), interpolation=cv2.INTER_LANCZOS4)
+        img = cv2.resize(
+            img, dsize=(192, 192), interpolation=cv2.INTER_LANCZOS4)
         pred_img = autoencoder.predict(img.reshape((1,) + img.shape + (1,)))
         pred_img = pred_img.reshape((192, 192))
         # plot prediction and save image

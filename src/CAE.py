@@ -1,7 +1,7 @@
 from predict import pred
 import random
 import os
-from features.build_features import get_filenames_list, create_tensors
+from build_features import get_filenames_list, create_tensors
 import config as cfg
 
 
