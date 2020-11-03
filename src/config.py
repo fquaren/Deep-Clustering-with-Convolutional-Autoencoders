@@ -16,7 +16,7 @@ experiments = '/home/phil/unimib/tesi/experiments'
 
 exp = 'test'
 
-cae_weights = os.path.join(models, exp, 'CAE_weights')
+cae_weights = os.path.join(models, exp, 'cae_weights')
 
 # Pretrain CAE settings
 model = nets.CAE_Conv2DTranspose()
@@ -44,6 +44,6 @@ cae_loss = 'mse'
 dcec_bs = 16
 maxiter = 10000
 update_interval = 200
-save_interval = 1000
+save_interval = 100
 tol = 0.01
 gamma = 0.1

@@ -9,12 +9,16 @@ def get_list_per_type(directory, scan):
 
 
 def get_image(names, directory, n):
-    image = cv2.imread(directory+names[n])
+    image = cv2.imread(os.path.join(directory, names[n]))
     image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     return image
 
 
 def pred(net, weigths, directory, scans, figures, exp, n):
+    '''
+    Predict the output of the net from a test image and save the prediction
+    (one for each scan).
+    '''
     for scan in scans:
         autoencoder, encoder = net
         autoencoder.load_weights(weigths)
@@ -29,6 +33,5 @@ def pred(net, weigths, directory, scans, figures, exp, n):
         plt.imshow(img)
         plt.subplot(1, 2, 2)
         plt.imshow(pred_img)
-        plt.savefig(os.path.join(figures, exp, scan+'_CAE.png'))
-        print('Prediction on done.')
-
+        plt.savefig(os.path.join(figures, exp, scan+'_cae_pred.png'))
+    print('Prediction on test images done.')
