@@ -33,11 +33,11 @@ if __name__ == "__main__":
     # pretrain CAE
     if not os.path.join(cfg.models, cfg.exp, 'cae_weights'):
         pretrainCAE(
-            x_train,
-            x_val,
-            cfg.cae_batch_size,
-            cfg.pretrain_epochs,
-            cfg.my_callbacks
+            x_train=x_train,
+            x_val=x_val,
+            batch_size=cfg.cae_batch_size,
+            pretrain_epochs=cfg.pretrain_epochs,
+            my_callbacks=cfg.my_callbacks
         )
         # save metrics to csv
         df = pd.DataFrame(data=cfg.d_cae)
@@ -47,11 +47,11 @@ if __name__ == "__main__":
     # predict for all categories on test dataset
     n = random.randint(0, 100)
     pred(
-        cfg.model,
-        os.path.join(cfg.models, cfg.exp, 'cae_weights'),
-        cfg.test_data,
-        cfg.scans,
-        cfg.figures,
-        cfg.exp,
-        n
+        net=cfg.model,
+        weights=os.path.join(cfg.models, cfg.exp, 'cae_weights'),
+        directory=cfg.test_data,
+        scans=cfg.scans,
+        figures=os.path.join(cfg.figures, cfg.exp, 'cae'),
+        exp=cfg.exp,
+        n=n
     )

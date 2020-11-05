@@ -36,8 +36,8 @@ def plot_cae_tnse(autoencoder, encoder, models_directory, figures, dataset):
 
 def plot_pretrain_metrics(file, save_dir):
     '''
-    This function read a csv file containing the pretraining metrics, plots them
-    and saves an image in the figures folder.
+    This function read a csv file containing the pretraining metrics, plots 
+    them and saves an image in the figures folder.
     '''
     data = pd.read_csv(file)
     train_loss = data['train_loss']
@@ -70,7 +70,8 @@ def plot_dcec_tsne(model, models_directory, figures, dataset):
         tsne = TSNE(n_components=2, perplexity=50)
         embedding = tsne.fit_transform(features)
         plt.figure()
-        plt.scatter(embedding[:, 0], embedding[:, 1], c=y_pred, s=20, cmap='brg')
+        plt.scatter(
+            embedding[:, 0], embedding[:, 1], c=y_pred, s=20, cmap='brg')
         plt.savefig(os.path.join(figures, 'tsne_{}'.format(ite)))
         print('saved scatter plot ite_{}'.format(ite))
 
@@ -208,5 +209,4 @@ if __name__ == "__main__":
         save_dir=os.path.join(cfg.figures, cfg.exp, 'dcec')
     )
 
-
-# TODO function for plotting of dispersion metrics
+    # TODO function for plotting of dispersion metrics
