@@ -22,7 +22,9 @@ def acc(y_true, y_pred):
     for i in range(y_pred.size):
         w[y_pred[i], y_true[i]] += 1
     row_ind, col_ind = linear_assignment(w.max() - w)
-    return sum([w[i, j] for (i, j) in zip(row_ind, col_ind)]) * 1.0 / y_pred.size
+    result = sum(
+        [w[i, j] for (i, j) in zip(row_ind, col_ind)]) * 1.0 / y_pred.size
+    return result
 
 
 # Student's distribution (see paper)

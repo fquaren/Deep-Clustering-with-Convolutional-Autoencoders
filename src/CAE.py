@@ -3,14 +3,14 @@ import random
 import os
 from build_features import get_filenames_list, create_tensors
 import config as cfg
-from matplotlib import pyplot as plt
+import pandas as pd
 
 
 def pretrainCAE(x_train, x_val, batch_size, pretrain_epochs, my_callbacks):
     autoencoder, encoder = cfg.model
     encoder.summary()
     autoencoder.summary()
-    autoencoder.compile(optimizer=cfg.optim, loss=cfg.cae_loss)
+    autoencoder.compile(optimizer=cfg.optim, loss='mse')
     autoencoder.fit(
         x_train,
         x_train,
@@ -20,13 +20,8 @@ def pretrainCAE(x_train, x_val, batch_size, pretrain_epochs, my_callbacks):
         callbacks=my_callbacks,
     )
     # save plot metrics
-    plt.figure(figsize=(10, 7))
-    plt.plot(autoencoder.history.history['loss'])
-    plt.plot(autoencoder.history.history['val_loss'])
-    plt.title('Loss')
-    plt.xlabel('Epoch')
-    plt.legend(['train_loss', 'val_loss'])
-    plt.savefig(os.path.join(cfg.figures, cfg.exp))
+    cfg.d_cae['train_loss'] = autoencoder.history.history['loss']
+    cfg.d_cae['val_loss'] = autoencoder.history.history['val_loss']
 
 
 if __name__ == "__main__":
@@ -44,6 +39,10 @@ if __name__ == "__main__":
             cfg.pretrain_epochs,
             cfg.my_callbacks
         )
+        # save metrics to csv
+        df = pd.DataFrame(data=cfg.d_cae)
+        df.to_csv(
+            os.path.join(cfg.tables, 'cae_train_metrics.csv'), index=False)
 
     # predict for all categories on test dataset
     n = random.randint(0, 100)
