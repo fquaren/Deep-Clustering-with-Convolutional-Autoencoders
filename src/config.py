@@ -18,10 +18,11 @@ experiments = '/home/phil/unimib/tesi/experiments'
 exp = 'test'
 
 cae_weights = os.path.join(models, exp, 'cae', 'cae_weights')
+cae_models = os.path.join(models, exp, 'cae')
 
 # Pretrain CAE settings
-model = nets.CAE_Conv2DTranspose_SMALL()
-#model = nets.CAE_Conv2DTranspose()
+cae = nets.CAE_Conv2DTranspose_SMALL()
+# cae = nets.CAE_Conv2DTranspose()
 init = VarianceScaling(
     scale=1./3.,
     mode='fan_in',
@@ -42,6 +43,7 @@ my_callbacks = [
 optim = 'adam'
 
 # Train DCEC settings
+n_init_kmeans = 50
 dcec_bs = 16
 maxiter = 1000
 update_interval = 200
