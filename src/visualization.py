@@ -36,7 +36,7 @@ def plot_cae_tnse(autoencoder, encoder, models_directory, figures, dataset):
 
 def plot_pretrain_metrics(file, save_dir):
     '''
-    This function read a csv file containing the pretraining metrics, plots 
+    This function read a csv file containing the pretraining metrics, plots
     them and saves an image in the figures folder.
     '''
     data = pd.read_csv(file)

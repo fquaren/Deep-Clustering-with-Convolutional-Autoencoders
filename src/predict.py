@@ -14,14 +14,14 @@ def get_image(names, directory, n):
     return image
 
 
-def pred(net, weigths, directory, scans, figures, exp, n):
+def pred_cae(net, weights, directory, scans, figures, exp, n):
     '''
     Predict the output of the net from a test image and save the prediction
     (one for each scan).
     '''
     for scan in scans:
         autoencoder, encoder = net
-        autoencoder.load_weights(weigths)
+        autoencoder.load_weights(weights)
         img = get_image(get_list_per_type(directory, scan), directory, n)
         img = cv2.resize(
             img, dsize=(192, 192), interpolation=cv2.INTER_LANCZOS4)

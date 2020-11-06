@@ -20,6 +20,7 @@ clustering_layer = ClusteringLayer(
 model = Model(
     inputs=encoder.input, outputs=[clustering_layer, cae.output])
 model.compile(loss=['kld', 'mse'], loss_weights=[0.1, 1], optimizer='adam')
+model.summary()
 
 # Get datasets
 directories, file_list = get_filenames_list(cfg.processed_data)
@@ -150,5 +151,8 @@ df.to_csv(os.path.join(cfg.tables, 'dcec_train_metrics.csv'), index=False)
 print('saving model to:', os.path.join(
     cfg.models, cfg.exp, 'dcec_model_final.h5'))
 model.save_weights(os.path.join(cfg.models, cfg.exp, 'dcec_model_final.h5'))
+
+n = random.randint(0, 100)
+
 
 print('done.')
