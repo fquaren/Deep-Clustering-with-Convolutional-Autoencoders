@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt
 from tqdm import tqdm
 import pandas as pd
 import config as cfg
-from nets import CAE_Conv2DTranspose, ClusteringLayer
+from nets import ClusteringLayer
 from build_features import get_filenames_list, create_tensors
 
 
@@ -42,6 +42,7 @@ def plot_pretrain_metrics(file, save_dir):
     data = pd.read_csv(file)
     train_loss = data['train_loss']
     val_loss = data['val_loss']
+    plt.figure()
     plt.plot(train_loss)
     plt.plot(val_loss)
     plt.title('Loss')
@@ -171,7 +172,7 @@ if __name__ == "__main__":
     _, _, _, _, x_test, y_test = create_tensors(
         file_list, directories)
 
-    cae, encoder = CAE_Conv2DTranspose()
+    cae, encoder = cfg.cae
     clustering_layer = ClusteringLayer(
         cfg.n_clusters, name='clustering')(encoder.output[1])
     model = Model(
@@ -196,17 +197,17 @@ if __name__ == "__main__":
 
     # --- DCEC ---
     # plot tsne dcec iterations during training
-    plot_dcec_tsne(
-        model=model,
-        models_directory=os.path.join(cfg.models, cfg.exp, 'dcec'),
-        figures=os.path.join(cfg.figures, cfg.exp, 'dcec'),
-        dataset=x_test
-    )
+    # plot_dcec_tsne(
+    #     model=model,
+    #     models_directory=os.path.join(cfg.models, cfg.exp, 'dcec'),
+    #     figures=os.path.join(cfg.figures, cfg.exp, 'dcec'),
+    #     dataset=x_test
+    # )
 
     # plot train metrics
-    plot_train_metrics(
-        file=os.path.join(cfg.tables, 'dcec_train_metrics.csv'),
-        save_dir=os.path.join(cfg.figures, cfg.exp, 'dcec')
-    )
+    # plot_train_metrics(
+    #     file=os.path.join(cfg.tables, 'dcec_train_metrics.csv'),
+    #     save_dir=os.path.join(cfg.figures, cfg.exp, 'dcec')
+    # )
 
     # TODO function for plotting of dispersion metrics

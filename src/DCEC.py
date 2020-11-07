@@ -19,7 +19,7 @@ def init_kmeans(
     autoencoder, encoder = cae
     # init DCEC
     clustering_layer = ClusteringLayer(
-        n_clusters, name='clustering')(encoder.output[1])
+        n_clusters, name='clustering')(encoder.output)
     model = Model(
         inputs=encoder.input, outputs=[clustering_layer, autoencoder.output])
     model.compile(loss=['kld', 'mse'], loss_weights=[0.1, 1], optimizer='adam')
@@ -31,7 +31,7 @@ def init_kmeans(
     # Initialize model using k-means centers
     print('initializing model using k-means centers...')
     kmeans = KMeans(n_clusters=n_clusters, n_init=n_init_kmeans)
-    features = encoder.predict(x_train)[1]
+    features = encoder.predict(x_train)
     y_pred = kmeans.fit_predict(features)
     y_pred_last = y_pred.copy()
     centers = kmeans.cluster_centers_
@@ -147,7 +147,7 @@ def train_val_DCEC(
         ite += 1
 
         # Save the trained model
-        print('saving model to:', path_models_dcec, 'dcec_model_final.h5')
+        # print('saving model to:', path_models_dcec, 'dcec_model_final.h5')
         model.save_weights(
             os.path.join(path_models_dcec, 'dcec_model_final.h5'))
         

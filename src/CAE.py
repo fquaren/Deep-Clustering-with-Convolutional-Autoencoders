@@ -21,8 +21,7 @@ def pretrainCAE(
         validation_data=(x_val, x_val),
         callbacks=my_callbacks,
     )
-    autoencoder.save_weights(
-        cae_models, 'cae_weights')
+    autoencoder.save_weights(os.path.join(cae_models, 'cae_weights'))
     # save plot metrics
     cfg.d_cae['train_loss'] = autoencoder.history.history['loss']
     cfg.d_cae['val_loss'] = autoencoder.history.history['val_loss']
@@ -57,7 +56,7 @@ if __name__ == "__main__":
         weights=os.path.join(cfg.models, cfg.exp, 'cae', 'cae_weights'),
         directory=cfg.test_data,
         scans=cfg.scans,
-        figures=os.path.join(cfg.figures, cfg.exp, 'cae'),
+        figures=cfg.figures,
         exp=cfg.exp,
         n=n
     )

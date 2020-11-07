@@ -34,7 +34,8 @@ def pred_cae(net, weights, directory, scans, figures, exp, n):
         plt.imshow(img)
         plt.subplot(1, 2, 2)
         plt.imshow(pred_img)
-        plt.savefig(os.path.join(figures, exp, scan+'_cae_pred.png'))
+        os.makedirs(os.path.join(figures, exp, 'cae'), exist_ok=True)
+        plt.savefig(os.path.join(figures, exp, 'cae', scan+'_cae_pred.png'))
     print('Prediction on test images done.')
 
 
