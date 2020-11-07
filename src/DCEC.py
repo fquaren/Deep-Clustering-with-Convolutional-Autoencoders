@@ -2,6 +2,7 @@ from tqdm import tqdm
 import os
 from keras.models import Model
 from sklearn.cluster import KMeans
+from sklearn.manifold import TSNE
 import numpy as np
 import random
 import pandas as pd
@@ -17,22 +18,31 @@ def init_kmeans(
         ):
 
     autoencoder, encoder = cae
+    
     # init DCEC
     clustering_layer = ClusteringLayer(
-        n_clusters, name='clustering')(encoder.output)
+        n_clusters, name='clustering')(encoder.output[1])
     model = Model(
         inputs=encoder.input, outputs=[clustering_layer, autoencoder.output])
     model.compile(loss=['kld', 'mse'], loss_weights=[0.1, 1], optimizer='adam')
     model.summary()
     # Compile encoder for kmeans
     autoencoder.load_weights(cfg.cae_weights)
-    encoder.compile(loss='kld', optimizer='adam')
+    # encoder.compile(loss='kld', optimizer='adam')
 
     # Initialize model using k-means centers
-    print('initializing model using k-means centers...')
+    
+    print('t-sne...')
+    # here i would put the prediction of the encoder but they are too big
+    # so i do dimensionality reduction to init the clustering layer, makes sense?
+    #features = encoder.predict(x_train)
+    tsne = TSNE(n_components=3, perplexity=50)
+    embedding = encoder.predict(x_train)[0]
+    input_cluster = tsne.fit_transform(embedding)
+
+    print('k-means...')
     kmeans = KMeans(n_clusters=n_clusters, n_init=n_init_kmeans)
-    features = encoder.predict(x_train)
-    y_pred = kmeans.fit_predict(features)
+    y_pred = kmeans.fit_predict(input_cluster)
     y_pred_last = y_pred.copy()
     centers = kmeans.cluster_centers_
     model.get_layer(name='clustering').set_weights([centers])

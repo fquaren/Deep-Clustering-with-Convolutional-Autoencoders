@@ -22,7 +22,7 @@ def CAE_Conv2DTranspose(input_shape=(192, 192, 1), filters=[16, 32, 64, 128, 30]
     return Model(inputs=input_img, outputs=decoded, name='CAE_Conv2DTranspose'), Model(inputs=input_img, outputs=[encoded, y], name='CE')
 
 
-def CAE_Conv2DTranspose_SMALL(input_shape=(192, 192, 1), filters=[16, 32, 3]):
+def CAE_Conv2DTranspose_SMALL(input_shape=(192, 192, 1), filters=[16, 32, 300]):
 
     input_img = Input(shape=input_shape)
 
@@ -32,14 +32,15 @@ def CAE_Conv2DTranspose_SMALL(input_shape=(192, 192, 1), filters=[16, 32, 3]):
     x = Flatten(name='flatten_1')(x)
     
     encoded = Dense(units=filters[-1], name='embedding')(x)
-        
+    input_clustering = Dense(units=3, name='input_clustering')(encoded)
+
     # Decoder
     x = Dense(units=48*48*filters[1], activation='relu')(encoded)
     x = Reshape((48, 48, filters[1]))(x)
-    x = Conv2DTranspose(filters[0], 5, strides=2, padding='same', activation='relu', name='deconv2')(x)
-    decoded = Conv2DTranspose(1, 3, strides=2, padding='same', name='deconv1')(x)
+    x = Conv2DTranspose(filters[0], 3, strides=2, padding='same', activation='relu', name='deconv2')(x)
+    decoded = Conv2DTranspose(1, 5, strides=2, padding='same', name='deconv1')(x)
 
-    return Model(inputs=input_img, outputs=decoded, name='CAE_Conv2DTranspose'), Model(inputs=input_img, outputs=[encoded], name='CE')
+    return Model(inputs=input_img, outputs=decoded, name='CAE_Conv2DTranspose'), Model(inputs=input_img, outputs=[encoded, input_clustering], name='CE')
 
 
 class ClusteringLayer(Layer):
