@@ -2,7 +2,6 @@ from tqdm import tqdm
 import os
 from keras.models import Model
 from sklearn.cluster import KMeans
-from sklearn.manifold import TSNE
 import numpy as np
 import random
 import pandas as pd
@@ -10,15 +9,15 @@ from nets import ClusteringLayer
 import config as cfg
 from metrics import target_distribution, nmi, ari, acc
 from build_features import get_filenames_list, create_tensors
+from predict import pred_dcec
 
 
 def init_kmeans(
-        cae, n_clusters, cae_weights, n_init_kmeans, x_train, y_train,
-        x_val, y_val
-        ):
+        cae, n_clusters, cae_weights, n_init_kmeans, x_train, y_train, x_val,
+        y_val):
 
     autoencoder, encoder = cae
-    
+
     # init DCEC
     clustering_layer = ClusteringLayer(
         n_clusters, name='clustering')(encoder.output[1])
@@ -31,18 +30,10 @@ def init_kmeans(
     # encoder.compile(loss='kld', optimizer='adam')
 
     # Initialize model using k-means centers
-    
-    print('t-sne...')
-    # here i would put the prediction of the encoder but they are too big
-    # so i do dimensionality reduction to init the clustering layer, makes sense?
-    #features = encoder.predict(x_train)
-    tsne = TSNE(n_components=3, perplexity=50)
-    embedding = encoder.predict(x_train)[0]
-    input_cluster = tsne.fit_transform(embedding)
-
     print('k-means...')
     kmeans = KMeans(n_clusters=n_clusters, n_init=n_init_kmeans)
-    y_pred = kmeans.fit_predict(input_cluster)
+    embedding = encoder.predict(x_train)
+    y_pred = kmeans.fit_predict(embedding)
     y_pred_last = y_pred.copy()
     centers = kmeans.cluster_centers_
     model.get_layer(name='clustering').set_weights([centers])
@@ -159,33 +150,10 @@ def train_val_DCEC(
         # print('saving model to:', path_models_dcec, 'dcec_model_final.h5')
         model.save_weights(
             os.path.join(path_models_dcec, 'dcec_model_final.h5'))
-        
+
         # Save metrics to csv
         df = pd.DataFrame(data=dictionary)
         df.to_csv(os.path.join(tables, 'dcec_train_metrics.csv'), index=False)
-
-def pred_dcecmodel, weights, directory, scans, figures, exp, n):
-    '''
-    Predict the output of the net from a test image and save the prediction
-    (one for each scan).
-    '''
-    for scan in scans:
-        model.load_weights(weights)
-        img = get_image(get_list_per_type(directory, scan), directory, n)
-        img = cv2.resize(
-            img, dsize=(192, 192), interpolation=cv2.INTER_LANCZOS4)
-        pred_img = model.predict(img.reshape((1,) + img.shape + (1,)))[1]
-        pred_img = pred_img.reshape((192, 192))
-        # plot prediction and save image
-        plt.figure(figsize=(14, 7))
-        plt.subplot(1, 2, 1)
-        plt.imshow(img)
-        plt.subplot(1, 2, 2)
-        plt.imshow(pred_img)
-        os.makedirs(os.path.join(figures, exp, 'cae'), exist_ok=True)
-        plt.savefig(os.path.join(figures, exp, 'cae', scan+'_cae_pred.png'))
-    print('Prediction on test images done.')
-
 
 
 if __name__ == "__main__":
@@ -222,6 +190,17 @@ if __name__ == "__main__":
         dictionary=cfg.d,
         path_models_dcec=os.path.join(cfg.models, cfg.exp, 'dcec'),
         tables=cfg.tables
+    )
+
+    pred_dcec(
+        model=model,
+        weights=os.path.join(
+            cfg.models, cfg.exp, 'dcec', 'dcec_model_final.h5'),
+        directory=cfg.test_data,
+        scans=cfg.scans,
+        figures=cfg.figures,
+        exp=cfg.exp,
+        n=random.randint(0, 100)
     )
 
 print('done.')

@@ -56,6 +56,6 @@ def pred_dcec(model, weights, directory, scans, figures, exp, n):
         plt.imshow(img)
         plt.subplot(1, 2, 2)
         plt.imshow(pred_img)
-        os.makedirs(os.path.join(figures, exp, 'cae'), exist_ok=True)
-        plt.savefig(os.path.join(figures, exp, 'cae', scan+'_cae_pred.png'))
+        os.makedirs(os.path.join(figures, exp, 'dcec'), exist_ok=True)
+        plt.savefig(os.path.join(figures, exp, 'dcec', scan))
     print('Prediction on test images done.')

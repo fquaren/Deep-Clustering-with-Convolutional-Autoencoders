@@ -182,7 +182,7 @@ def test_dcec(model, x, y):
     return test_loss, test_acc, y_test_pred
 
 
-def plot_dispersion_matrix(y_true, y_pred):
+def plot_confusion_matrix(y_true, y_pred):
     sns.set(font_scale=3)
     matrix = confusion_matrix(
         [int(i) for i in y_true], y_pred)
@@ -235,18 +235,18 @@ if __name__ == "__main__":
 
     # --- DCEC ---
     # plot tsne dcec iterations during training
-    # plot_dcec_tsne(
-    #     model=model,
-    #     models_directory=os.path.join(cfg.models, cfg.exp, 'dcec'),
-    #     figures=os.path.join(cfg.figures, cfg.exp, 'dcec'),
-    #     dataset=x_test
-    # )
+    plot_dcec_tsne(
+        model=model,
+        models_directory=os.path.join(cfg.models, cfg.exp, 'dcec'),
+        figures=os.path.join(cfg.figures, cfg.exp, 'dcec'),
+        dataset=x_test
+    )
 
     # plot train metrics
-    # plot_train_metrics(
-    #     file=os.path.join(cfg.tables, 'dcec_train_metrics.csv'),
-    #     save_dir=os.path.join(cfg.figures, cfg.exp, 'dcec')
-    # )
+    plot_train_metrics(
+        file=os.path.join(cfg.tables, 'dcec_train_metrics.csv'),
+        save_dir=os.path.join(cfg.figures, cfg.exp, 'dcec')
+    )
 
     _, _, y_pred = test_dcec(model, x_test, y_test)
-    plot_dispersion_matrix(y_test, y_pred)
+    plot_confusion_matrix(y_test, y_pred)
