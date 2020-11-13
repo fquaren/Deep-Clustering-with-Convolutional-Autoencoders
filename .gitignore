@@ -1,7 +1,5 @@
 *.ipynb_checkpoints*
 *__pycache__*
 *old*
-data
 *.vscode*
 *experiments*
-*models*
