@@ -7,13 +7,13 @@ scans = ['CT', 'MRI', 'PET']
 n_clusters = len(scans)
 
 # Paths
-processed_data = '/home/phil/unimib/tesi/data/processed/'
-train_data = '/home/phil/unimib/tesi/data/processed/train'
-test_data = '/home/phil/unimib/tesi/data/processed/test'
-models = '/home/phil/unimib/tesi/models'
-tables = '/home/phil/unimib/tesi/data/tables'
-figures = '/home/phil/unimib/tesi/reports/figures'
-experiments = '/home/phil/unimib/tesi/experiments'
+processed_data = '/home/fquaren/unimib/tesi/data/processed/'
+train_data = '/home/fquaren/unimib/tesi/data/processed/train'
+test_data = '/home/fquaren/unimib/tesi/data/processed/test'
+models = '/home/fquaren/unimib/tesi/models'
+tables = '/home/fquaren/unimib/tesi/data/tables'
+figures = '/home/fquaren/unimib/tesi/reports/figures'
+experiments = '/home/fquaren/unimib/tesi/experiments'
 
 exp = 'test'
 
@@ -21,8 +21,7 @@ cae_weights = os.path.join(models, exp, 'cae', 'cae_weights')
 cae_models = os.path.join(models, exp, 'cae')
 
 # Pretrain CAE settings
-cae = nets.CAE_Conv2DTranspose_SMALL()
-# cae = nets.CAE_Conv2DTranspose()
+cae = nets.CAE_Conv2DTranspose_small()
 init = VarianceScaling(
     scale=1./3.,
     mode='fan_in',

@@ -8,11 +8,11 @@ import pandas as pd
 
 def pretrainCAE(
         model, x_train, x_val, batch_size, pretrain_epochs, my_callbacks,
-        cae_models):
+        cae_models, optim):
     autoencoder, encoder = model
     encoder.summary()
     autoencoder.summary()
-    autoencoder.compile(optimizer=cfg.optim, loss='mse')
+    autoencoder.compile(optimizer=optim, loss='mse')
     autoencoder.fit(
         x_train,
         x_train,
@@ -34,7 +34,6 @@ if __name__ == "__main__":
         file_list, directories)
 
     # pretrain CAE
-    #if not os.path.join(cfg.cae_models, 'cae_weights'):
     pretrainCAE(
         model=cfg.cae,
         x_train=x_train,
@@ -42,7 +41,8 @@ if __name__ == "__main__":
         batch_size=cfg.cae_batch_size,
         pretrain_epochs=cfg.pretrain_epochs,
         my_callbacks=cfg.my_callbacks,
-        cae_models=cfg.cae_models
+        cae_models=cfg.cae_models,
+        optim=cfg.optim
     )
     # save metrics to csv
     df = pd.DataFrame(data=cfg.d_cae)

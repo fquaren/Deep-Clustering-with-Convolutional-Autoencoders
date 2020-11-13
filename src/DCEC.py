@@ -149,7 +149,6 @@ def train_val_DCEC(
         dictionary['train_ari'].append(train_ari)
         dictionary['val_ari'].append(val_ari)
 
-        # TODO Convert to save the best looking at val_loss?
         # Save model checkpoint
         if ite % save_interval == 0:
             model.save_weights(
@@ -164,6 +163,29 @@ def train_val_DCEC(
         # Save metrics to csv
         df = pd.DataFrame(data=dictionary)
         df.to_csv(os.path.join(tables, 'dcec_train_metrics.csv'), index=False)
+
+def pred_dcecmodel, weights, directory, scans, figures, exp, n):
+    '''
+    Predict the output of the net from a test image and save the prediction
+    (one for each scan).
+    '''
+    for scan in scans:
+        model.load_weights(weights)
+        img = get_image(get_list_per_type(directory, scan), directory, n)
+        img = cv2.resize(
+            img, dsize=(192, 192), interpolation=cv2.INTER_LANCZOS4)
+        pred_img = model.predict(img.reshape((1,) + img.shape + (1,)))[1]
+        pred_img = pred_img.reshape((192, 192))
+        # plot prediction and save image
+        plt.figure(figsize=(14, 7))
+        plt.subplot(1, 2, 1)
+        plt.imshow(img)
+        plt.subplot(1, 2, 2)
+        plt.imshow(pred_img)
+        os.makedirs(os.path.join(figures, exp, 'cae'), exist_ok=True)
+        plt.savefig(os.path.join(figures, exp, 'cae', scan+'_cae_pred.png'))
+    print('Prediction on test images done.')
+
 
 
 if __name__ == "__main__":

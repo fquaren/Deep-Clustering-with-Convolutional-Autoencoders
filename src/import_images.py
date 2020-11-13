@@ -19,9 +19,9 @@ def copyImages(sources, _file_names, directory):
 # SETTINGS
 
 # raw data paths
-CT = '../../data/raw/CT/'
-MRI = '../../data/raw/MRI/'
-PET = '../../data/raw/PET/'
+CT = '../data/raw/CT/'
+MRI = '../data/raw/MRI/'
+PET = '../data/raw/PET/'
 train_size = 0.5
 val_size = 0.7
 
@@ -68,13 +68,13 @@ print('Number of test images:', len(test_file_names), '= %.0f' % percTest, '%')
 
 # Make processed data folder and copy images in train, val and test
 # delete existing processed data
-processed_data = '../../data/processed'
+processed_data = '../data/processed'
 if os.path.exists(processed_data):
     try:
         shutil.rmtree(processed_data)
     except:
         raise
-# make preprocessed/
+# make processed/
 processed_dirs = [
     'train',
     'val',

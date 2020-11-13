@@ -1,13 +1,18 @@
 import os
 from sklearn.manifold import TSNE
 from sklearn.cluster import KMeans
+from sklearn.metrics import confusion_matrix
 from keras.models import Model
+import numpy as np
 from matplotlib import pyplot as plt
+from scipy.optimize import linear_sum_assignment as linear_assignment
+import seaborn as sns
 from tqdm import tqdm
 import pandas as pd
 import config as cfg
 from nets import ClusteringLayer
 from build_features import get_filenames_list, create_tensors
+from metrics import target_distribution, acc
 
 
 def plot_cae_tnse(autoencoder, encoder, models_directory, figures, dataset):
@@ -167,6 +172,38 @@ def plot_train_metrics(file, save_dir):
     plt.savefig(os.path.join(save_dir, 'train_val_acc_nmi_ari'))
 
 
+def test_dcec(model, x, y):
+    test_q, _ = model.predict(x, verbose=0)
+    test_p = target_distribution(test_q)
+    test_loss = model.fit(x=x, y=[test_p, x], verbose=0)
+    test_acc = []
+    y_test_pred = test_q.argmax(1)
+    test_acc = acc(y, y_test_pred)
+    return test_loss, test_acc, y_test_pred
+
+
+def plot_dispersion_matrix(y_true, y_pred):
+    sns.set(font_scale=3)
+    matrix = confusion_matrix(
+        [int(i) for i in y_true], y_pred)
+
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(matrix, annot=True, fmt="d", annot_kws={"size": 20})
+    plt.title("Confusion matrix")
+    plt.ylabel('True label')
+    plt.xlabel('Clustering label')
+
+    D = max(y_pred.max(), y_true.max()) + 1
+    w = np.zeros((D, D), dtype=np.int64)
+    # Confusion matrix.
+    for i in range(y_pred.size):
+        w[y_pred[i], y_true[i]] += 1
+    ind = linear_assignment(-w)
+    a = ind[0].tolist()
+    b = ind[1].tolist()
+    print(np.array([a, b]))
+
+
 if __name__ == "__main__":
     directories, file_list = get_filenames_list(cfg.processed_data)
     _, _, _, _, x_test, y_test = create_tensors(
@@ -177,7 +214,8 @@ if __name__ == "__main__":
         cfg.n_clusters, name='clustering')(encoder.output[1])
     model = Model(
         inputs=encoder.input, outputs=[clustering_layer, cae.output])
-    model.compile(loss=['kld', 'mse'], loss_weights=[0.1, 1], optimizer='adam')
+    model.compile(
+        loss=['kld', 'mse'], loss_weights=[cfg.gamma, 1], optimizer='adam')
 
     # --- CAE ---
     # plot tsne after kmean init
@@ -210,4 +248,5 @@ if __name__ == "__main__":
     #     save_dir=os.path.join(cfg.figures, cfg.exp, 'dcec')
     # )
 
-    # TODO function for plotting of dispersion metrics
+    _, _, y_pred = test_dcec(model, x_test, y_test)
+    plot_dispersion_matrix(y_test, y_pred)

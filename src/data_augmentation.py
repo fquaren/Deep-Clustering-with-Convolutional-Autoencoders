@@ -15,8 +15,12 @@ def random_rotation(image_array: ndarray):
     Pick a random degree of rotation between 25% on the left and 25% on the 
     right.
     '''
-    random_degree = random.uniform(-25, 25)
+    random_degree = random.uniform(-20, 20)
     return skimage.transform.rotate(image_array, random_degree)
+
+def add_noise(image_array: ndarray):
+    # sigma 0.01 default
+    return skimage.util.random_noise(image_array)
 
 
 def horizontal_flip(image_array: ndarray):
@@ -47,8 +51,8 @@ def data_aumgentation(j, processed_data, processed_dirs, train_file_names):
         folder_path) if os.path.isfile(os.path.join(folder_path, f))]
     available_transformations = {
         'rotate': random_rotation,
-        'horizontal_flip': horizontal_flip,
-        'vertical_flip': vertical_flip
+        # 'horizontal_flip': horizontal_flip,
+        # 'vertical_flip': vertical_flip
     }
     # TODO fix
     # https://stackoverflow.com/questions/58893860/lossy-conversion-from-float64-to-uint8
