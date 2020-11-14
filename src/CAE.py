@@ -4,6 +4,10 @@ import os
 from build_features import get_filenames_list, create_tensors
 import config as cfg
 import pandas as pd
+from keras.models import Model
+from sklearn.cluster import KMeans
+from nets import ClusteringLayer
+from metrics import nmi, ari, acc
 
 
 def pretrainCAE(
@@ -26,6 +30,40 @@ def pretrainCAE(
     # save plot metrics
     cfg.d_cae['train_loss'] = autoencoder.history.history['loss']
     cfg.d_cae['val_loss'] = autoencoder.history.history['val_loss']
+
+
+def init_kmeans(cae, n_clusters, ce_weights, n_init_kmeans, x, y, gamma):
+
+    autoencoder, encoder = cae
+
+    # init DCEC
+    clustering_layer = ClusteringLayer(
+        n_clusters, name='clustering')(encoder.output[1])
+    model = Model(
+        inputs=encoder.input, outputs=[clustering_layer, autoencoder.output])
+    model.compile(
+        loss=['kld', 'mse'], loss_weights=[gamma, 1], optimizer='adam')
+    model.summary()
+
+    # Initialize model using k-means centers
+    print('k-means...')
+    encoder.load_weights(cfg.ce_weights)
+    kmeans = KMeans(n_clusters=n_clusters, n_init=n_init_kmeans)
+    input_cluster = encoder.predict(x)[1]
+    y_pred = kmeans.fit_predict(input_cluster)
+    y_pred_last = y_pred.copy()
+    centers = kmeans.cluster_centers_
+    model.get_layer(name='clustering').set_weights([centers])
+    print('metrics before training.')
+    print(
+        'acc = {}; nmi = {}; ari = {}'.format(
+            acc(y, y_pred),
+            nmi(y, y_pred),
+            ari(y, y_pred)
+        )
+    )
+
+    return model, y_pred_last
 
 
 if __name__ == "__main__":
@@ -61,3 +99,13 @@ if __name__ == "__main__":
     df = pd.DataFrame(data=cfg.d_cae)
     df.to_csv(
         os.path.join(cfg.tables, 'cae_first_train_metrics.csv'), index=False)
+
+    _, _ = init_kmeans(
+        cae=cfg.cae,
+        n_clusters=cfg.n_clusters,
+        ce_weights=cfg.ce_weights,
+        n_init_kmeans=cfg.n_init_kmeans,
+        x=x_test,
+        y=y_test,
+        gamma=cfg.gamma
+    )

@@ -1,48 +1,13 @@
 from tqdm import tqdm
 import os
-from keras.models import Model
-from sklearn.cluster import KMeans
 import numpy as np
 import random
 import pandas as pd
-from nets import ClusteringLayer
 import config as cfg
 from metrics import target_distribution, nmi, ari, acc
 from build_features import get_filenames_list, create_tensors
 from predict import pred_dcec
-
-
-def init_kmeans(cae, n_clusters, ce_weights, n_init_kmeans, x, y):
-
-    autoencoder, encoder = cae
-
-    # init DCEC
-    clustering_layer = ClusteringLayer(
-        n_clusters, name='clustering')(encoder.output[1])
-    model = Model(
-        inputs=encoder.input, outputs=[clustering_layer, autoencoder.output])
-    model.compile(loss=['kld', 'mse'], loss_weights=[0.1, 1], optimizer='adam')
-    model.summary()
-
-    # Initialize model using k-means centers
-    print('k-means...')
-    encoder.load_weights(cfg.ce_weights)
-    kmeans = KMeans(n_clusters=n_clusters, n_init=n_init_kmeans)
-    input_cluster = encoder.predict(x)[1]
-    y_pred = kmeans.fit_predict(input_cluster)
-    y_pred_last = y_pred.copy()
-    centers = kmeans.cluster_centers_
-    model.get_layer(name='clustering').set_weights([centers])
-    print('metrics before training.')
-    print(
-        'acc = {}; nmi = {}; ari = {}'.format(
-            acc(y, y_pred),
-            nmi(y, y_pred),
-            ari(y, y_pred)
-        )
-    )
-
-    return model, y_pred_last
+from CAE import init_kmeans
 
 
 def train_val_DCEC(
@@ -170,7 +135,8 @@ if __name__ == "__main__":
         ce_weights=cfg.ce_weights,
         n_init_kmeans=cfg.n_init_kmeans,
         x=x_test,
-        y=y_test
+        y=y_test,
+        gamma=cfg.gamma
     )
 
     train_val_DCEC(
