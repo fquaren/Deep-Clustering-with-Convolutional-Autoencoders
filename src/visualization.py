@@ -104,7 +104,7 @@ def plot_train_metrics(file, save_dir):
     val_ari = data['val_ari']
 
     # losses
-    plt.figure()
+    plt.figure(figsize=(30, 10))
     plt.subplot(1, 3, 1)
     x1 = ite
     y1 = train_loss
@@ -140,7 +140,7 @@ def plot_train_metrics(file, save_dir):
     plt.savefig(os.path.join(save_dir, 'train_val_loss'))
 
     # other metrics
-    plt.figure()
+    plt.figure(figsize=(30, 10))
     plt.subplot(1, 3, 1)
     x1 = ite
     y1 = train_acc
@@ -189,7 +189,6 @@ def test_dcec(model, x, y):
 
 
 def plot_confusion_matrix(y_true, y_pred, save_dir):
-    sns.set(font_scale=3)
     matrix = confusion_matrix(
         [int(i) for i in y_true], y_pred)
 
@@ -264,6 +263,3 @@ if __name__ == "__main__":
         save_dir=os.path.join(cfg.figures, cfg.exp, 'dcec')
     )
     print('final metrics:', metrics)
-
-acc = 0.6589147286821705; nmi = 0.524200900767234; ari = 0.4471663371545426
-'test_acc': 0.6511627906976745, 'test_nmi': 0.49171130911163846, 'test_ari': 0.4269702990473279

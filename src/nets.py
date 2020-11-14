@@ -62,7 +62,7 @@ def CAE_Conv2DTranspose_big(input_shape=(192, 192, 1), filters=[16, 32, 3]):
     return Model(inputs=input_img, outputs=decoded, name='CAE'), Model(inputs=input_img, outputs=[encoded], name='CE')
 
 
-def CAE_Conv2DTranspose_random(input_shape=(192, 192, 1), filters=[16, 32, 64, 3]):
+def CAE_Conv2DTranspose(input_shape=(192, 192, 1), filters=[16, 32, 64, 3]):
 
     input_img = Input(shape=input_shape)
 

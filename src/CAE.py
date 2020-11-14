@@ -72,7 +72,7 @@ if __name__ == "__main__":
     x_train, y_train, x_val, y_val, x_test, y_test = create_tensors(
         file_list, directories)
 
-    # pretrain CAE with CAE small
+    # pretrain CAE
     if not os.path.join(cfg.models, cfg.exp, 'cae', 'cae_weights'):
         pretrainCAE(
             model=cfg.cae,

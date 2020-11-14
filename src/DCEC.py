@@ -35,9 +35,8 @@ def train_val_DCEC(
                 train_nmi = np.round(nmi(y_train, y_train_pred), 5)
                 train_ari = np.round(ari(y_train, y_train_pred), 5)
                 train_loss = np.round(train_loss, 5)
-                print(
-                    'Iter', ite, ': Acc tr', train_acc, ', nmi tr', train_nmi,
-                    ', ari tr', train_ari, '; loss tr=', train_loss
+                print('Iter {}: train acc={}, train nmi={}, train ari={}, train loss={}'.format(
+                        ite, train_acc, train_nmi, train_ari, train_loss)
                 )
 
             y_val_pred = val_q.argmax(1)
@@ -46,11 +45,12 @@ def train_val_DCEC(
                 val_nmi = np.round(nmi(y_val, y_val_pred), 5)
                 val_ari = np.round(ari(y_val, y_val_pred), 5)
                 val_loss = np.round(val_loss, 5)
-                print(
-                    'Iter', ite, ': Acc val', val_acc, ', nmi val', val_nmi,
-                    ', ari val', val_ari, ', loss val=', val_loss)
+                print('Iter {}: val acc={}, val nmi={}, val ari={}, val loss={}'.format(
+                        ite, val_acc, val_nmi, val_ari, val_loss)
+                )
 
             # Check stop criterion on train -> TODO on validation?
+            #lista = [f for i, f in enumerate(y_train_pred) if f != y_pred_last[i]]
             delta_label = np.sum(y_train_pred != y_pred_last).astype(
                 np.float32) / y_train_pred.shape[0]
             y_pred_last = np.copy(y_train_pred)
@@ -60,26 +60,32 @@ def train_val_DCEC(
                 break
 
         # Train on batch
-        if (index + 1) * dcec_bs > x_train.shape[0]:
-            train_loss = model.train_on_batch(
-                x=x_train[index * dcec_bs::],
-                y=[
-                    p[index * dcec_bs::],
-                    x_train[index * dcec_bs::]
-                ]
-            )
-            index = 0
-        else:
-            train_loss = model.train_on_batch(
-                x=x_train[
-                    index * dcec_bs:(index + 1) * dcec_bs
-                    ],
-                y=[
-                    p[index * dcec_bs:(index + 1) * dcec_bs],
-                    x_train[index * dcec_bs:(index + 1) * dcec_bs]
-                ]
-            )
-            index += 1
+        # if (index + 1) * dcec_bs > x_train.shape[0]:
+        #     train_loss = model.train_on_batch(
+        #         x=x_train[index * dcec_bs::],
+        #         y=[
+        #             p[index * dcec_bs::],
+        #             x_train[index * dcec_bs::]
+        #         ]
+        #     )
+        #     index = 0
+        # else:
+        #     train_loss = model.train_on_batch(
+        #         x=x_train[
+        #             index * dcec_bs:(index + 1) * dcec_bs
+        #             ],
+        #         y=[
+        #             p[index * dcec_bs:(index + 1) * dcec_bs],
+        #             x_train[index * dcec_bs:(index + 1) * dcec_bs]
+        #         ]
+        #     )
+        #     index += 1
+        x_train_batch = np.array(random.sample(list(x_train), dcec_bs))
+        train_p_batch = np.array(random.sample(list(p), dcec_bs))
+        train_loss = model.train_on_batch(
+            x=x_train_batch,
+            y=[train_p_batch, x_train_batch]
+        )
 
         # Validation on batch
         x_val_batch = np.array(random.sample(list(x_val), dcec_bs))

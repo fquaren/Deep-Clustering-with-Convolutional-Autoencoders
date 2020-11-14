@@ -22,8 +22,8 @@ cae_weights = os.path.join(models, exp, 'cae', 'cae_weights')
 ce_weights = os.path.join(models, exp, 'cae', 'ce_weights')
 
 # Pretrain CAE settings
-cae_small = nets.CAE_Conv2DTranspose_small()
-cae = nets.CAE_Conv2DTranspose_random()
+# cae_small = nets.CAE_Conv2DTranspose_small()
+cae = nets.CAE_Conv2DTranspose()
 init = VarianceScaling(
     scale=1./3.,
     mode='fan_in',
@@ -46,11 +46,11 @@ optim = 'adam'
 # Train DCEC settings
 n_init_kmeans = 100
 dcec_bs = 16
-maxiter = 1000
-update_interval = 150
-save_interval = 100
+maxiter = 30000
+update_interval = 1000
+save_interval = update_interval
 tol = 0.01
-gamma = 0.05
+gamma = 0.01
 index = 0
 
 # Pandas dataframe
