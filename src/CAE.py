@@ -54,13 +54,13 @@ if __name__ == "__main__":
         figures=cfg.figures,
         exp=cfg.exp,
         n=random.randint(0, 20),
-        n_train='primo_train'
+        n_train='first_train_'
     )
 
     # save metrics to csv
-    # df = pd.DataFrame(data=cfg.d_cae)
-    # df.to_csv(
-    #     os.path.join(cfg.tables, 'cae_train_metrics.csv'), index=False)
+    df = pd.DataFrame(data=cfg.d_cae)
+    df.to_csv(
+        os.path.join(cfg.tables, 'cae_first_train_metrics.csv'), index=False)
 
     # Transfer learning
     autoencoder, _ = cfg.cae_small
@@ -96,13 +96,13 @@ if __name__ == "__main__":
         figures=cfg.figures,
         exp=cfg.exp,
         n=random.randint(0, 20),
-        n_train='secondo_train'
+        n_train='second_train_'
     )
 
     # save metrics to csv
-    # df = pd.DataFrame(data=cfg.d_cae)
-    # df.to_csv(
-    #     os.path.join(cfg.tables, 'cae_train_metrics.csv'), index=False)
+    df = pd.DataFrame(data=cfg.d_cae)
+    df.to_csv(
+        os.path.join(cfg.tables, 'cae_second_train_metrics.csv'), index=False)
 
     autoencoder.get_layer(name='conv1').trainable = True
     autoencoder.get_layer(name='conv2').trainable = True
@@ -120,9 +120,9 @@ if __name__ == "__main__":
     )
 
     # save metrics to csv
-    # df = pd.DataFrame(data=cfg.d_cae)
-    # df.to_csv(
-    #     os.path.join(cfg.tables, 'cae_train_metrics.csv'), index=False)
+    df = pd.DataFrame(data=cfg.d_cae)
+    df.to_csv(
+        os.path.join(cfg.tables, 'cae_third_train_metrics.csv'), index=False)
 
     # predict for all categories on test dataset
     pred_cae(
@@ -133,5 +133,5 @@ if __name__ == "__main__":
         figures=cfg.figures,
         exp=cfg.exp,
         n=random.randint(0, 20),
-        n_train='terzo_train'
+        n_train='third_train_'
     )

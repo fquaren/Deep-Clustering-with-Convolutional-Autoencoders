@@ -42,7 +42,7 @@ def CAE_Conv2DTranspose_small(input_shape=(192, 192, 1), filters=[16, 32, 300]):
     return Model(inputs=input_img, outputs=decoded, name='CAE'), Model(inputs=input_img, outputs=encoded, name='CE') 
 
 
-def CAE_Conv2DTranspose_big(input_shape=(192, 192, 1), filters=[16, 32, 300, 3]):
+def CAE_Conv2DTranspose_big(input_shape=(192, 192, 1), filters=[16, 32, 3]):
 
     input_img = Input(shape=input_shape)
 
@@ -54,7 +54,7 @@ def CAE_Conv2DTranspose_big(input_shape=(192, 192, 1), filters=[16, 32, 300, 3])
     encoded = Dense(units=filters[-1], name='embedding')(x)
 
     # Decoder
-    x = Dense(units=48*48*filters[1], activation='relu')(x)
+    x = Dense(units=48*48*filters[1], activation='relu')(encoded)
     x = Reshape((48, 48, filters[1]))(x)
     x = Conv2DTranspose(filters[0], 3, strides=2, padding='same', activation='relu', name='deconv2')(x)
     decoded = Conv2DTranspose(1, 3, strides=2, padding='same', name='deconv1')(x)
