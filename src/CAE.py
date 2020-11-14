@@ -38,7 +38,7 @@ def init_kmeans(cae, n_clusters, ce_weights, n_init_kmeans, x, y, gamma):
 
     # init DCEC
     clustering_layer = ClusteringLayer(
-        n_clusters, name='clustering')(encoder.output[1])
+        n_clusters, name='clustering')(encoder.output)
     model = Model(
         inputs=encoder.input, outputs=[clustering_layer, autoencoder.output])
     model.compile(
@@ -49,7 +49,7 @@ def init_kmeans(cae, n_clusters, ce_weights, n_init_kmeans, x, y, gamma):
     print('k-means...')
     encoder.load_weights(cfg.ce_weights)
     kmeans = KMeans(n_clusters=n_clusters, n_init=n_init_kmeans)
-    input_cluster = encoder.predict(x)[1]
+    input_cluster = encoder.predict(x)
     y_pred = kmeans.fit_predict(input_cluster)
     y_pred_last = y_pred.copy()
     centers = kmeans.cluster_centers_
@@ -73,32 +73,33 @@ if __name__ == "__main__":
         file_list, directories)
 
     # pretrain CAE with CAE small
-    pretrainCAE(
-        model=cfg.cae,
-        x_train=x_train,
-        x_val=x_val,
-        batch_size=cfg.cae_batch_size,
-        pretrain_epochs=cfg.pretrain_epochs,
-        my_callbacks=cfg.my_callbacks,
-        cae_models=cfg.cae_models,
-        optim=cfg.optim
-    )
+    if not os.path.join(cfg.models, cfg.exp, 'cae', 'cae_weights'):
+        pretrainCAE(
+            model=cfg.cae,
+            x_train=x_train,
+            x_val=x_val,
+            batch_size=cfg.cae_batch_size,
+            pretrain_epochs=cfg.pretrain_epochs,
+            my_callbacks=cfg.my_callbacks,
+            cae_models=cfg.cae_models,
+            optim=cfg.optim
+        )
 
-    pred_cae(
-        net=cfg.cae,
-        weights=os.path.join(cfg.models, cfg.exp, 'cae', 'cae_weights'),
-        directory=cfg.test_data,
-        scans=cfg.scans,
-        figures=cfg.figures,
-        exp=cfg.exp,
-        n=random.randint(0, 20),
-        n_train='first_train_'
-    )
+        pred_cae(
+            net=cfg.cae,
+            weights=os.path.join(cfg.models, cfg.exp, 'cae', 'cae_weights'),
+            directory=cfg.test_data,
+            scans=cfg.scans,
+            figures=cfg.figures,
+            exp=cfg.exp,
+            n=random.randint(0, 20),
+            n_train='first_train_'
+        )
 
-    # save metrics to csv
-    df = pd.DataFrame(data=cfg.d_cae)
-    df.to_csv(
-        os.path.join(cfg.tables, 'cae_first_train_metrics.csv'), index=False)
+        # save metrics to csv
+        df = pd.DataFrame(data=cfg.d_cae)
+        df.to_csv(
+            os.path.join(cfg.tables, 'cae_first_train_metrics.csv'), index=False)
 
     _, _ = init_kmeans(
         cae=cfg.cae,

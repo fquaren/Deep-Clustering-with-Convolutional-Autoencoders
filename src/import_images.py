@@ -70,10 +70,7 @@ print('Number of test images:', len(test_file_names), '= %.0f' % percTest, '%')
 # delete existing processed data
 processed_data = '../data/processed'
 if os.path.exists(processed_data):
-    try:
-        shutil.rmtree(processed_data)
-    except:
-        raise
+    shutil.rmtree(processed_data)
 # make processed/
 processed_dirs = [
     'train',

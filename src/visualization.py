@@ -12,7 +12,7 @@ import pandas as pd
 import config as cfg
 from nets import ClusteringLayer
 from build_features import get_filenames_list, create_tensors
-from metrics import target_distribution, acc
+from metrics import acc, nmi, ari
 
 
 def plot_cae_tnse(autoencoder, encoder, models_directory, figures, dataset):
@@ -29,7 +29,7 @@ def plot_cae_tnse(autoencoder, encoder, models_directory, figures, dataset):
     """
     autoencoder.load_weights(os.path.join(models_directory, 'cae_weights'))
     kmeans = KMeans(n_clusters=cfg.n_clusters, n_init=50)
-    features = encoder.predict(dataset)[0]
+    features = encoder.predict(dataset)
     y_pred = kmeans.fit_predict(features)
     tsne = TSNE(n_components=2, perplexity=50)
     embedding = tsne.fit_transform(features)
@@ -147,8 +147,8 @@ def plot_train_metrics(file, save_dir):
     y2 = val_acc
     plt.plot(x1, y1)
     plt.plot(x1, y2)
-    plt.title('Acc')
-    plt.ylabel('Accuracy')
+    plt.title('Accuracy')
+    plt.ylabel('Acc')
     plt.xlabel('Epoch')
     plt.legend(['Train', 'Validation'])
 
@@ -158,7 +158,7 @@ def plot_train_metrics(file, save_dir):
     y2 = val_nmi
     plt.plot(x1, y1)
     plt.plot(x1, y2)
-    plt.title('Acc')
+    plt.title('NMI')
     plt.ylabel('NMI')
     plt.xlabel('Epoch')
     plt.legend(['Train', 'Validation'])
@@ -169,7 +169,7 @@ def plot_train_metrics(file, save_dir):
     y2 = val_ari
     plt.plot(x1, y1)
     plt.plot(x1, y2)
-    plt.title('Acc')
+    plt.title('ARI')
     plt.ylabel('ARI')
     plt.xlabel('Epoch')
     plt.legend(['Train', 'Validation'])
@@ -177,13 +177,15 @@ def plot_train_metrics(file, save_dir):
 
 
 def test_dcec(model, x, y):
+    metrics = {}
     test_q, _ = model.predict(x, verbose=0)
-    test_p = target_distribution(test_q)
-    #test_loss = model.fit(x=x, y=[test_p, x], verbose=0)
-    test_acc = []
+    # test_p = target_distribution(test_q)
+    # test_loss = model.fit(x=x, y=[test_p, x], verbose=0)
     y_test_pred = test_q.argmax(1)
-    test_acc = acc(y, y_test_pred)
-    return test_acc, y_test_pred
+    metrics['test_acc'] = acc(y, y_test_pred)
+    metrics['test_nmi'] = nmi(y, y_test_pred)
+    metrics['test_ari'] = ari(y, y_test_pred)
+    return metrics, y_test_pred
 
 
 def plot_confusion_matrix(y_true, y_pred, save_dir):
@@ -216,7 +218,7 @@ if __name__ == "__main__":
 
     cae, encoder = cfg.cae
     clustering_layer = ClusteringLayer(
-        cfg.n_clusters, name='clustering')(encoder.output[1])
+        cfg.n_clusters, name='clustering')(encoder.output)
     model = Model(
         inputs=encoder.input, outputs=[clustering_layer, cae.output])
     model.compile(
@@ -255,10 +257,13 @@ if __name__ == "__main__":
         save_dir=os.path.join(cfg.figures, cfg.exp, 'dcec')
     )
 
-    final_acc, y_pred = test_dcec(model, x_test, y_test)
+    metrics, y_pred = test_dcec(model, x_test, y_test)
     plot_confusion_matrix(
         y_true=y_test,
         y_pred=y_pred,
         save_dir=os.path.join(cfg.figures, cfg.exp, 'dcec')
     )
-    print('final acc:', final_acc)
+    print('final metrics:', metrics)
+
+acc = 0.6589147286821705; nmi = 0.524200900767234; ari = 0.4471663371545426
+'test_acc': 0.6511627906976745, 'test_nmi': 0.49171130911163846, 'test_ari': 0.4269702990473279
