@@ -31,21 +31,23 @@ def init_kmeans(
 
     # Initialize model using k-means centers
     print('k-means...')
-    kmeans = KMeans(n_clusters=n_clusters, n_init=n_init_kmeans)
-    embedding = encoder.predict(x_train)
-    y_pred = kmeans.fit_predict(embedding)
-    y_pred_last = y_pred.copy()
-    centers = kmeans.cluster_centers_
-    model.get_layer(name='clustering').set_weights([centers])
-
-    print('metrics before training.')
-    print(
-        'acc = {}; nmi = {}; ari = {}'.format(
-            acc(y_train, y_pred),
-            nmi(y_train, y_pred),
-            ari(y_train, y_pred)
+    accuracy = 0
+    while accuracy < 0.7:
+        kmeans = KMeans(n_clusters=n_clusters, n_init=n_init_kmeans)
+        embedding = encoder.predict(x_train)[1]
+        y_pred = kmeans.fit_predict(embedding)
+        y_pred_last = y_pred.copy()
+        centers = kmeans.cluster_centers_
+        model.get_layer(name='clustering').set_weights([centers])
+        accuracy = acc(y_train, y_pred)
+        print('metrics before training.')
+        print(
+            'acc = {}; nmi = {}; ari = {}'.format(
+                accuracy,
+                nmi(y_train, y_pred),
+                ari(y_train, y_pred)
+            )
         )
-    )
 
     return model, y_pred_last
 

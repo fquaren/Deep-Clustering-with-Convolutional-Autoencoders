@@ -23,7 +23,7 @@ ce_weights = os.path.join(models, exp, 'cae', 'ce_weights')
 
 # Pretrain CAE settings
 cae_small = nets.CAE_Conv2DTranspose_small()
-cae = nets.CAE_Conv2DTranspose_big()
+cae = nets.CAE_Conv2DTranspose_random()
 init = VarianceScaling(
     scale=1./3.,
     mode='fan_in',

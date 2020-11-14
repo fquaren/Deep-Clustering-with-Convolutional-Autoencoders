@@ -36,7 +36,7 @@ if __name__ == "__main__":
 
     # pretrain CAE with CAE small
     pretrainCAE(
-        model=cfg.cae_small,
+        model=cfg.cae,
         x_train=x_train,
         x_val=x_val,
         batch_size=cfg.cae_batch_size,
@@ -47,7 +47,7 @@ if __name__ == "__main__":
     )
 
     pred_cae(
-        net=cfg.cae_small,
+        net=cfg.cae,
         weights=os.path.join(cfg.models, cfg.exp, 'cae', 'cae_weights'),
         directory=cfg.test_data,
         scans=cfg.scans,
@@ -61,77 +61,3 @@ if __name__ == "__main__":
     df = pd.DataFrame(data=cfg.d_cae)
     df.to_csv(
         os.path.join(cfg.tables, 'cae_first_train_metrics.csv'), index=False)
-
-    # Transfer learning
-    autoencoder, _ = cfg.cae_small
-    autoencoder.load_weights(cfg.ce_weights)
-    conv1 = autoencoder.get_layer(name='conv1').get_weights()
-    conv2 = autoencoder.get_layer(name='conv2').get_weights()
-    flatten_1 = autoencoder.get_layer(name='flatten_1').get_weights()
-
-    autoencoder, _ = cfg.cae
-    autoencoder.get_layer(name='conv1').set_weights(conv1)
-    autoencoder.get_layer(name='conv1').trainable = False
-    autoencoder.get_layer(name='conv2').set_weights(conv2)
-    autoencoder.get_layer(name='conv2').trainable = False
-    autoencoder.get_layer(name='flatten_1').set_weights(flatten_1)
-    autoencoder.get_layer(name='flatten_1').trainable = False
-
-    pretrainCAE(
-        model=cfg.cae,
-        x_train=x_train,
-        x_val=x_val,
-        batch_size=cfg.cae_batch_size,
-        pretrain_epochs=cfg.pretrain_epochs,
-        my_callbacks=cfg.my_callbacks,
-        cae_models=cfg.cae_models,
-        optim=cfg.optim
-    )
-
-    pred_cae(
-        net=cfg.cae,
-        weights=os.path.join(cfg.models, cfg.exp, 'cae', 'cae_weights'),
-        directory=cfg.test_data,
-        scans=cfg.scans,
-        figures=cfg.figures,
-        exp=cfg.exp,
-        n=random.randint(0, 20),
-        n_train='second_train_'
-    )
-
-    # save metrics to csv
-    df = pd.DataFrame(data=cfg.d_cae)
-    df.to_csv(
-        os.path.join(cfg.tables, 'cae_second_train_metrics.csv'), index=False)
-
-    autoencoder.get_layer(name='conv1').trainable = True
-    autoencoder.get_layer(name='conv2').trainable = True
-    autoencoder.get_layer(name='flatten_1').trainable = True
-
-    pretrainCAE(
-        model=cfg.cae,
-        x_train=x_train,
-        x_val=x_val,
-        batch_size=cfg.cae_batch_size,
-        pretrain_epochs=cfg.pretrain_epochs,
-        my_callbacks=cfg.my_callbacks,
-        cae_models=cfg.cae_models,
-        optim=cfg.optim
-    )
-
-    # save metrics to csv
-    df = pd.DataFrame(data=cfg.d_cae)
-    df.to_csv(
-        os.path.join(cfg.tables, 'cae_third_train_metrics.csv'), index=False)
-
-    # predict for all categories on test dataset
-    pred_cae(
-        net=cfg.cae,
-        weights=os.path.join(cfg.models, cfg.exp, 'cae', 'cae_weights'),
-        directory=cfg.test_data,
-        scans=cfg.scans,
-        figures=cfg.figures,
-        exp=cfg.exp,
-        n=random.randint(0, 20),
-        n_train='third_train_'
-    )
