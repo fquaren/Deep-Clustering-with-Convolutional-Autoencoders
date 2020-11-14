@@ -17,11 +17,13 @@ experiments = '/home/fquaren/unimib/tesi/experiments'
 
 exp = 'test'
 
-cae_weights = os.path.join(models, exp, 'cae', 'cae_weights')
 cae_models = os.path.join(models, exp, 'cae')
+cae_weights = os.path.join(models, exp, 'cae', 'cae_weights')
+ce_weights = os.path.join(models, exp, 'cae', 'ce_weights')
 
 # Pretrain CAE settings
-cae = nets.CAE_Conv2DTranspose_small()
+cae_small = nets.CAE_Conv2DTranspose_small()
+cae = nets.CAE_Conv2DTranspose_big()
 init = VarianceScaling(
     scale=1./3.,
     mode='fan_in',

@@ -13,7 +13,7 @@ from predict import pred_dcec
 
 
 def init_kmeans(
-        cae, n_clusters, cae_weights, n_init_kmeans, x_train, y_train, x_val,
+        cae, n_clusters, ce_weights, n_init_kmeans, x_train, y_train, x_val,
         y_val):
 
     autoencoder, encoder = cae
@@ -26,7 +26,7 @@ def init_kmeans(
     model.compile(loss=['kld', 'mse'], loss_weights=[0.1, 1], optimizer='adam')
     model.summary()
     # Compile encoder for kmeans
-    autoencoder.load_weights(cfg.cae_weights)
+    autoencoder.load_weights(cfg.ce_weights)
     # encoder.compile(loss='kld', optimizer='adam')
 
     # Initialize model using k-means centers
@@ -200,7 +200,7 @@ if __name__ == "__main__":
         scans=cfg.scans,
         figures=cfg.figures,
         exp=cfg.exp,
-        n=random.randint(0, 100)
+        n=random.randint(0, 20)
     )
 
 print('done.')

@@ -14,7 +14,7 @@ def get_image(names, directory, n):
     return image
 
 
-def pred_cae(net, weights, directory, scans, figures, exp, n):
+def pred_cae(net, weights, directory, scans, figures, exp, n, n_train):
     '''
     Predict the output of the net from a test image and save the prediction
     (one for each scan).
@@ -34,7 +34,7 @@ def pred_cae(net, weights, directory, scans, figures, exp, n):
         plt.subplot(1, 2, 2)
         plt.imshow(pred_img)
         os.makedirs(os.path.join(figures, exp, 'cae'), exist_ok=True)
-        plt.savefig(os.path.join(figures, exp, 'cae', scan+'_cae_pred.png'))
+        plt.savefig(os.path.join(figures, exp, 'cae', n_train+scan+'_cae_pred.png'))
     print('Prediction on test images done.')
 
 

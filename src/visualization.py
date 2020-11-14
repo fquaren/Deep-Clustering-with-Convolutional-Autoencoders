@@ -217,6 +217,8 @@ if __name__ == "__main__":
     model.compile(
         loss=['kld', 'mse'], loss_weights=[cfg.gamma, 1], optimizer='adam')
 
+    os.makedirs(os.path.join(cfg.figures, cfg.exp, 'cae'))
+    os.makedirs(os.path.join(cfg.figures, cfg.exp, 'dcec'))
     # --- CAE ---
     # plot tsne after kmean init
     plot_cae_tnse(
