@@ -44,13 +44,13 @@ my_callbacks = [
 optim = 'adam'
 
 # Train DCEC settings
-n_init_kmeans = 50
+n_init_kmeans = 100
 dcec_bs = 16
 maxiter = 1000
-update_interval = 200
+update_interval = 10
 save_interval = 100
-tol = 0.001
-gamma = 0.1
+tol = 0.01
+gamma = 0.05
 index = 0
 
 # Pandas dataframe
@@ -58,6 +58,10 @@ d = {
     'iteration': [],
     'train_loss': [],
     'val_loss': [],
+    'clustering_loss': [],
+    'val_clustering_loss': [],
+    'reconstruction_loss': [],
+    'val_reconstruction_loss': [],
     'train_acc': [],
     'val_acc': [],
     'train_nmi': [],

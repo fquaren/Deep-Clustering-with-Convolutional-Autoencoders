@@ -12,9 +12,7 @@ from build_features import get_filenames_list, create_tensors
 from predict import pred_dcec
 
 
-def init_kmeans(
-        cae, n_clusters, ce_weights, n_init_kmeans, x_train, y_train, x_val,
-        y_val):
+def init_kmeans(cae, n_clusters, ce_weights, n_init_kmeans, x, y):
 
     autoencoder, encoder = cae
 
@@ -25,29 +23,24 @@ def init_kmeans(
         inputs=encoder.input, outputs=[clustering_layer, autoencoder.output])
     model.compile(loss=['kld', 'mse'], loss_weights=[0.1, 1], optimizer='adam')
     model.summary()
-    # Compile encoder for kmeans
-    autoencoder.load_weights(cfg.ce_weights)
-    # encoder.compile(loss='kld', optimizer='adam')
 
     # Initialize model using k-means centers
     print('k-means...')
-    accuracy = 0
-    while accuracy < 0.7:
-        kmeans = KMeans(n_clusters=n_clusters, n_init=n_init_kmeans)
-        embedding = encoder.predict(x_train)[1]
-        y_pred = kmeans.fit_predict(embedding)
-        y_pred_last = y_pred.copy()
-        centers = kmeans.cluster_centers_
-        model.get_layer(name='clustering').set_weights([centers])
-        accuracy = acc(y_train, y_pred)
-        print('metrics before training.')
-        print(
-            'acc = {}; nmi = {}; ari = {}'.format(
-                accuracy,
-                nmi(y_train, y_pred),
-                ari(y_train, y_pred)
-            )
+    encoder.load_weights(cfg.ce_weights)
+    kmeans = KMeans(n_clusters=n_clusters, n_init=n_init_kmeans)
+    input_cluster = encoder.predict(x)[1]
+    y_pred = kmeans.fit_predict(input_cluster)
+    y_pred_last = y_pred.copy()
+    centers = kmeans.cluster_centers_
+    model.get_layer(name='clustering').set_weights([centers])
+    print('metrics before training.')
+    print(
+        'acc = {}; nmi = {}; ari = {}'.format(
+            acc(y, y_pred),
+            nmi(y, y_pred),
+            ari(y, y_pred)
         )
+    )
 
     return model, y_pred_last
 
@@ -55,7 +48,7 @@ def init_kmeans(
 def train_val_DCEC(
         maxiter, update_interval, save_interval, x_train, y_train, x_val,
         y_val, y_pred_last, model, tol, index, dcec_bs, dictionary,
-        path_models_dcec, tables
+        path_models_dcec, tables, exp
         ):
 
     # Init loss
@@ -133,8 +126,12 @@ def train_val_DCEC(
 
         # Save metrics to dict for csv
         dictionary['iteration'].append(ite)
-        dictionary['train_loss'].append(train_loss)
-        dictionary['val_loss'].append(val_loss)
+        dictionary['train_loss'].append(train_loss[0])
+        dictionary['val_loss'].append(val_loss[0])
+        dictionary['clustering_loss'].append(train_loss[1])
+        dictionary['val_clustering_loss'].append(val_loss[1])
+        dictionary['reconstruction_loss'].append(train_loss[2])
+        dictionary['val_reconstruction_loss'].append(val_loss[2])
         dictionary['train_acc'].append(train_acc)
         dictionary['val_acc'].append(val_acc)
         dictionary['train_nmi'].append(train_nmi)
@@ -144,8 +141,10 @@ def train_val_DCEC(
 
         # Save model checkpoint
         if ite % save_interval == 0:
+            os.makedirs(os.path.join(exp, path_models_dcec), exist_ok=True)
             model.save_weights(
-                os.path.join(path_models_dcec, 'dcec_model_'+str(ite)+'.h5'))
+                os.path.join(
+                    exp, path_models_dcec, 'dcec_model_'+str(ite)+'.h5'))
         ite += 1
 
         # Save the trained model
@@ -168,15 +167,14 @@ if __name__ == "__main__":
     model, y_pred_last = init_kmeans(
         cae=cfg.cae,
         n_clusters=cfg.n_clusters,
-        cae_weights=cfg.cae_weights,
+        ce_weights=cfg.ce_weights,
         n_init_kmeans=cfg.n_init_kmeans,
-        x_train=x_train,
-        y_train=y_train,
-        x_val=x_val,
-        y_val=y_val
+        x=x_test,
+        y=y_test
     )
 
     train_val_DCEC(
+        exp=cfg.exp,
         maxiter=cfg.maxiter,
         update_interval=cfg.update_interval,
         save_interval=cfg.save_interval,

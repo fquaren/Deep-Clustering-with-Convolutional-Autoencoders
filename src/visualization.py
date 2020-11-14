@@ -92,6 +92,10 @@ def plot_train_metrics(file, save_dir):
     ite = data['iteration']
     train_loss = data['train_loss']
     val_loss = data['val_loss']
+    clust_loss = data['clustering_loss']
+    val_clust_loss = data['val_clustering_loss']
+    rec_loss = data['reconstruction_loss']
+    val_rec_loss = data['val_reconstruction_loss']
     train_acc = data['train_acc']
     val_acc = data['val_acc']
     train_nmi = data['train_nmi']
@@ -103,8 +107,8 @@ def plot_train_metrics(file, save_dir):
     plt.figure()
     plt.subplot(1, 3, 1)
     x1 = ite
-    y1 = train_loss[0]
-    y2 = val_loss[0]
+    y1 = train_loss
+    y2 = val_loss
     plt.plot(x1, y1)
     plt.plot(x1, y2)
     plt.title('L')
@@ -114,22 +118,22 @@ def plot_train_metrics(file, save_dir):
 
     plt.subplot(1, 3, 2)
     x1 = ite
-    y1 = train_loss[1]
-    y2 = val_loss[1]
+    y1 = clust_loss
+    y2 = val_clust_loss
     plt.plot(x1, y1)
     plt.plot(x1, y2)
-    plt.title('Lr: reconstruction loss')
+    plt.title('Lc: clustering loss')
     plt.ylabel('Loss')
     plt.xlabel('Epoch')
     plt.legend(['Train', 'Validation'])
 
     plt.subplot(1, 3, 3)
     x1 = ite
-    y1 = train_loss[2]
-    y2 = val_loss[2]
+    y1 = rec_loss
+    y2 = val_rec_loss
     plt.plot(x1, y1)
     plt.plot(x1, y2)
-    plt.title('Lc: clustering loss')
+    plt.title('Lr: reconstruction loss')
     plt.ylabel('Loss')
     plt.xlabel('Epoch')
     plt.legend(['Train', 'Validation'])
@@ -175,23 +179,24 @@ def plot_train_metrics(file, save_dir):
 def test_dcec(model, x, y):
     test_q, _ = model.predict(x, verbose=0)
     test_p = target_distribution(test_q)
-    test_loss = model.fit(x=x, y=[test_p, x], verbose=0)
+    #test_loss = model.fit(x=x, y=[test_p, x], verbose=0)
     test_acc = []
     y_test_pred = test_q.argmax(1)
     test_acc = acc(y, y_test_pred)
-    return test_loss, test_acc, y_test_pred
+    return test_acc, y_test_pred
 
 
-def plot_confusion_matrix(y_true, y_pred):
+def plot_confusion_matrix(y_true, y_pred, save_dir):
     sns.set(font_scale=3)
     matrix = confusion_matrix(
         [int(i) for i in y_true], y_pred)
 
-    plt.figure(figsize=(10, 8))
+    plt.figure()
     sns.heatmap(matrix, annot=True, fmt="d", annot_kws={"size": 20})
     plt.title("Confusion matrix")
     plt.ylabel('True label')
     plt.xlabel('Clustering label')
+    plt.savefig(os.path.join(save_dir, 'confusion_matrix'))
 
     D = max(y_pred.max(), y_true.max()) + 1
     w = np.zeros((D, D), dtype=np.int64)
@@ -217,8 +222,8 @@ if __name__ == "__main__":
     model.compile(
         loss=['kld', 'mse'], loss_weights=[cfg.gamma, 1], optimizer='adam')
 
-    os.makedirs(os.path.join(cfg.figures, cfg.exp, 'cae'))
-    os.makedirs(os.path.join(cfg.figures, cfg.exp, 'dcec'))
+    os.makedirs(os.path.join(cfg.figures, cfg.exp, 'cae'), exist_ok=True)
+    os.makedirs(os.path.join(cfg.figures, cfg.exp, 'dcec'), exist_ok=True)
     # --- CAE ---
     # plot tsne after kmean init
     plot_cae_tnse(
@@ -250,5 +255,10 @@ if __name__ == "__main__":
         save_dir=os.path.join(cfg.figures, cfg.exp, 'dcec')
     )
 
-    _, _, y_pred = test_dcec(model, x_test, y_test)
-    plot_confusion_matrix(y_test, y_pred)
+    final_acc, y_pred = test_dcec(model, x_test, y_test)
+    plot_confusion_matrix(
+        y_true=y_test,
+        y_pred=y_pred,
+        save_dir=os.path.join(cfg.figures, cfg.exp, 'dcec')
+    )
+    print('final acc:', final_acc)
