@@ -23,6 +23,11 @@ def train_val_DCEC(
     # Train and val
     for ite in tqdm(range(int(maxiter))):
         if ite % update_interval == 0:
+            if ite == 0:
+                gamma = 0
+            else:
+                gamma = 0.01 - 1/ite
+            model.compile(loss=['kld', 'mse'], loss_weights=[gamma, 1], optimizer=cfg.dcec_optim)
             q, _ = model.predict(x_train, verbose=0)
             p = target_distribution(q)
             val_q, _ = model.predict(x_val, verbose=0)
@@ -35,9 +40,8 @@ def train_val_DCEC(
                 train_nmi = np.round(nmi(y_train, y_train_pred), 5)
                 train_ari = np.round(ari(y_train, y_train_pred), 5)
                 train_loss = np.round(train_loss, 5)
-                print('Iter {}: train acc={}, train nmi={}, train ari={}, train loss={}'.format(
-                        ite, train_acc, train_nmi, train_ari, train_loss)
-                )
+                print('\nIter {}: train acc={}, train nmi={}, train ari={}, train loss={}'.format(
+                        ite, train_acc, train_nmi, train_ari, train_loss))
 
             y_val_pred = val_q.argmax(1)
             if y_val is not None:
@@ -46,12 +50,11 @@ def train_val_DCEC(
                 val_ari = np.round(ari(y_val, y_val_pred), 5)
                 val_loss = np.round(val_loss, 5)
                 print('Iter {}: val acc={}, val nmi={}, val ari={}, val loss={}'.format(
-                        ite, val_acc, val_nmi, val_ari, val_loss)
-                )
+                    ite, val_acc, val_nmi, val_ari, val_loss))
 
             # Check stop criterion on train -> TODO on validation?
-            #lista = [f for i, f in enumerate(y_train_pred) if f != y_pred_last[i]]
-            delta_label = np.sum(y_train_pred != y_pred_last).astype(
+            diff = [f for f, i in enumerate(y_train_pred) if f != y_pred_last[i]]
+            delta_label = np.sum(diff).astype(
                 np.float32) / y_train_pred.shape[0]
             y_pred_last = np.copy(y_train_pred)
             if ite > 0 and delta_label < tol:
@@ -60,26 +63,6 @@ def train_val_DCEC(
                 break
 
         # Train on batch
-        # if (index + 1) * dcec_bs > x_train.shape[0]:
-        #     train_loss = model.train_on_batch(
-        #         x=x_train[index * dcec_bs::],
-        #         y=[
-        #             p[index * dcec_bs::],
-        #             x_train[index * dcec_bs::]
-        #         ]
-        #     )
-        #     index = 0
-        # else:
-        #     train_loss = model.train_on_batch(
-        #         x=x_train[
-        #             index * dcec_bs:(index + 1) * dcec_bs
-        #             ],
-        #         y=[
-        #             p[index * dcec_bs:(index + 1) * dcec_bs],
-        #             x_train[index * dcec_bs:(index + 1) * dcec_bs]
-        #         ]
-        #     )
-        #     index += 1
         x_train_batch = np.array(random.sample(list(x_train), dcec_bs))
         train_p_batch = np.array(random.sample(list(p), dcec_bs))
         train_loss = model.train_on_batch(
@@ -119,13 +102,12 @@ def train_val_DCEC(
         ite += 1
 
         # Save the trained model
-        # print('saving model to:', path_models_dcec, 'dcec_model_final.h5')
         model.save_weights(
             os.path.join(path_models_dcec, 'dcec_model_final.h5'))
 
         # Save metrics to csv
         df = pd.DataFrame(data=dictionary)
-        df.to_csv(os.path.join(tables, 'dcec_train_metrics.csv'), index=False)
+        df.to_csv(os.path.join(tables, exp, 'dcec_train_metrics.csv'), index=False)
 
 
 if __name__ == "__main__":

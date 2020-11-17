@@ -42,7 +42,7 @@ def init_kmeans(cae, n_clusters, ce_weights, n_init_kmeans, x, y, gamma):
     model = Model(
         inputs=encoder.input, outputs=[clustering_layer, autoencoder.output])
     model.compile(
-        loss=['kld', 'mse'], loss_weights=[gamma, 1], optimizer='adam')
+        loss=['kld', 'mse'], loss_weights=[gamma, 1], optimizer=cfg.dcec_optim)
     model.summary()
 
     # Initialize model using k-means centers
@@ -99,7 +99,7 @@ if __name__ == "__main__":
         # save metrics to csv
         df = pd.DataFrame(data=cfg.d_cae)
         df.to_csv(
-            os.path.join(cfg.tables, 'cae_first_train_metrics.csv'), index=False)
+            os.path.join(cfg.tables, cfg.exp, 'cae_first_train_metrics.csv'), index=False)
 
     _, _ = init_kmeans(
         cae=cfg.cae,

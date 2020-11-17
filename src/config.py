@@ -2,6 +2,7 @@ import os
 from keras.initializers import VarianceScaling
 from keras.callbacks import TensorBoard, EarlyStopping, ModelCheckpoint
 import nets
+from tensorflow.keras.optimizers import Adam
 
 scans = ['CT', 'MRI', 'PET']
 n_clusters = len(scans)
@@ -46,12 +47,13 @@ optim = 'adam'
 # Train DCEC settings
 n_init_kmeans = 100
 dcec_bs = 16
-maxiter = 30000
-update_interval = 1000
+maxiter = 3000
+update_interval = 500
 save_interval = update_interval
 tol = 0.01
-gamma = 0.01
+gamma = 0.001
 index = 0
+dcec_optim = Adam(learning_rate=0.001)
 
 # Pandas dataframe
 d = {
