@@ -1,4 +1,5 @@
 import os
+from keras.optimizers.schedules import InverseTimeDecay
 from keras.initializers import VarianceScaling
 from keras.callbacks import TensorBoard, EarlyStopping, ModelCheckpoint
 import nets
@@ -23,7 +24,6 @@ cae_weights = os.path.join(models, exp, 'cae', 'cae_weights')
 ce_weights = os.path.join(models, exp, 'cae', 'ce_weights')
 
 # Pretrain CAE settings
-# cae_small = nets.CAE_Conv2DTranspose_small()
 cae = nets.CAE_Conv2DTranspose()
 init = VarianceScaling(
     scale=1./3.,
@@ -31,7 +31,7 @@ init = VarianceScaling(
     distribution='uniform'
 )
 pretrain_epochs = 1000
-cae_batch_size = 12
+cae_batch_size = 64
 my_callbacks = [
     EarlyStopping(patience=10, monitor='val_loss'),
     TensorBoard(log_dir=os.path.join(experiments, exp)),
@@ -42,7 +42,7 @@ my_callbacks = [
         monitor='val_loss'
     )
 ]
-optim = 'adam'
+cae_optim = 'adam'
 
 # Train DCEC settings
 n_init_kmeans = 100
@@ -50,16 +50,15 @@ dcec_bs = 12
 maxiter = 3000
 update_interval = 50
 save_interval = update_interval
-tol = 0.01
+tol = 0.1
 gamma = 0.01
 index = 0
 
 initial_learning_rate = 0.001
 decay_steps = 0.1
 decay_rate = 0.001
-learning_rate_fn = keras.optimizers.schedules.InverseTimeDecay(
-  initial_learning_rate, decay_steps, decay_rate)
-
+learning_rate_fn = InverseTimeDecay(
+    initial_learning_rate, decay_steps, decay_rate)
 dcec_optim = Adam(learning_rate=learning_rate_fn)
 
 

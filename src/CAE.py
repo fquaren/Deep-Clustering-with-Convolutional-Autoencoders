@@ -91,7 +91,7 @@ if __name__ == "__main__":
         pretrain_epochs=cfg.pretrain_epochs,
         my_callbacks=cfg.my_callbacks,
         cae_models=cfg.cae_models,
-        optim=cfg.optim
+        optim=cfg.cae_optim
     )
 
     pred_cae(
