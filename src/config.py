@@ -16,7 +16,7 @@ tables = '/home/fquaren/unimib/tesi/data/tables'
 figures = '/home/fquaren/unimib/tesi/reports/figures'
 experiments = '/home/fquaren/unimib/tesi/experiments'
 
-exp = 'test'
+exp = 'test_small_batch_size'
 
 cae_models = os.path.join(models, exp, 'cae')
 cae_weights = os.path.join(models, exp, 'cae', 'cae_weights')
@@ -31,7 +31,7 @@ init = VarianceScaling(
     distribution='uniform'
 )
 pretrain_epochs = 1000
-cae_batch_size = 32
+cae_batch_size = 12
 my_callbacks = [
     EarlyStopping(patience=10, monitor='val_loss'),
     TensorBoard(log_dir=os.path.join(experiments, exp)),
@@ -46,14 +46,24 @@ optim = 'adam'
 
 # Train DCEC settings
 n_init_kmeans = 100
-dcec_bs = 16
+dcec_bs = 12
 maxiter = 3000
-update_interval = 500
+update_interval = 50
 save_interval = update_interval
 tol = 0.01
-gamma = 0.001
+gamma = 0.01
 index = 0
-dcec_optim = Adam(learning_rate=0.001)
+
+initial_learning_rate = 0.001
+decay_steps = 0.1
+decay_rate = 0.001
+learning_rate_fn = keras.optimizers.schedules.InverseTimeDecay(
+  initial_learning_rate, decay_steps, decay_rate)
+
+dcec_optim = Adam(learning_rate=learning_rate_fn)
+
+
+
 
 # Pandas dataframe
 d = {

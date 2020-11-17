@@ -10,6 +10,10 @@ from predict import pred_dcec
 from CAE import init_kmeans
 
 
+def gamma_function(ite):
+    return 1e-3 + (1-1/ite)*1e-3
+
+
 def train_val_DCEC(
         maxiter, update_interval, save_interval, x_train, y_train, x_val,
         y_val, y_pred_last, model, tol, index, dcec_bs, dictionary,
@@ -23,11 +27,16 @@ def train_val_DCEC(
     # Train and val
     for ite in tqdm(range(int(maxiter))):
         if ite % update_interval == 0:
-            if ite == 0:
-                gamma = 0
-            else:
-                gamma = 0.01 - 1/ite
-            model.compile(loss=['kld', 'mse'], loss_weights=[gamma, 1], optimizer=cfg.dcec_optim)
+            # if ite == 0:
+            #     gamma = 1e-3
+            # else:
+            #     gamma = gamma_function(ite)
+            #     print(gamma)
+            model.compile(
+                loss=['kld', 'mse'],
+                loss_weights=[cfg.gamma, 1],
+                optimizer=cfg.dcec_optim
+            )
             q, _ = model.predict(x_train, verbose=0)
             p = target_distribution(q)
             val_q, _ = model.predict(x_val, verbose=0)
@@ -107,11 +116,11 @@ def train_val_DCEC(
 
         # Save metrics to csv
         df = pd.DataFrame(data=dictionary)
-        df.to_csv(os.path.join(tables, exp, 'dcec_train_metrics.csv'), index=False)
+        # df.to_csv(os.path.join(
+        #     tables, exp, 'dcec_train_metrics.csv'), index=False)
 
 
-if __name__ == "__main__":
-
+def main():
     # Get datasets
     directories, file_list = get_filenames_list(cfg.processed_data)
     x_train, y_train, x_val, y_val, x_test, y_test = create_tensors(
@@ -157,4 +166,8 @@ if __name__ == "__main__":
         n=random.randint(0, 20)
     )
 
-print('done.')
+    print('done.')
+
+
+if __name__ == "__main__":
+    main()

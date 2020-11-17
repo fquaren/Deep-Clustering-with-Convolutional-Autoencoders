@@ -236,10 +236,10 @@ if __name__ == "__main__":
     )
 
     # plot pretrain metrics
-    plot_pretrain_metrics(
-        file=os.path.join(cfg.tables, 'cae_train_metrics.csv'),
-        save_dir=os.path.join(cfg.figures, cfg.exp, 'cae'),
-    )
+    # plot_pretrain_metrics(
+    #     file=os.path.join(cfg.tables, 'cae_train_metrics.csv'),
+    #     save_dir=os.path.join(cfg.figures, cfg.exp, 'cae'),
+    # )
 
     # --- DCEC ---
     # plot tsne dcec iterations during training
@@ -251,10 +251,10 @@ if __name__ == "__main__":
     )
 
     # plot train metrics
-    plot_train_metrics(
-        file=os.path.join(cfg.tables, 'dcec_train_metrics.csv'),
-        save_dir=os.path.join(cfg.figures, cfg.exp, 'dcec')
-    )
+    # plot_train_metrics(
+    #     file=os.path.join(cfg.tables, 'dcec_train_metrics.csv'),
+    #     save_dir=os.path.join(cfg.figures, cfg.exp, 'dcec')
+    # )
 
     metrics, y_pred = test_dcec(model, x_test, y_test)
     plot_confusion_matrix(
