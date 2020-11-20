@@ -8,15 +8,17 @@ import skimage
 import skimage.io
 import skimage.transform
 from scipy import ndarray
+import numpy as np
 
 
 def random_rotation(image_array: ndarray):
     '''
-    Pick a random degree of rotation between 25% on the left and 25% on the 
+    Pick a random degree of rotation between 25% on the left and 25% on the
     right.
     '''
-    random_degree = random.uniform(-20, 20)
+    random_degree = random.uniform(-15, 15)
     return skimage.transform.rotate(image_array, random_degree)
+
 
 def add_noise(image_array: ndarray):
     # sigma 0.01 default
@@ -54,8 +56,6 @@ def data_aumgentation(j, processed_data, processed_dirs, train_file_names):
         # 'horizontal_flip': horizontal_flip,
         # 'vertical_flip': vertical_flip
     }
-    # TODO fix
-    # https://stackoverflow.com/questions/58893860/lossy-conversion-from-float64-to-uint8
     for i in tqdm(range(num_files_desired)):
         # random image from the folder
         image_path = random.choice(images)
@@ -68,10 +68,10 @@ def data_aumgentation(j, processed_data, processed_dirs, train_file_names):
 
         # define a name for our new file
         image_path = image_path.split('/')[-1]
-        new_file_path = '{}_augmented_image_{}.png'.format(
+        new_file_path = '{}_augm_{}.png'.format(
             image_path.split('.')[0], i)
-        # TODO fix here probably
-        # img_uint8 = transformed_image.astype(np.uint8)
+        transformed_image = (transformed_image*255).astype(np.uint8)
+        #import pdb; pdb.set_trace()
         imageio.imwrite(
             os.path.join(folder_path, new_file_path), transformed_image)
         # write image to the disk

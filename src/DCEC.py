@@ -5,9 +5,9 @@ import random
 import pandas as pd
 import config as cfg
 from metrics import target_distribution, nmi, ari, acc
-from build_features import get_filenames_list, create_tensors
 from predict import pred_dcec
 from CAE import init_kmeans
+from build_and_save_features import load_dataset
 
 
 def gamma_function(ite):
@@ -121,10 +121,18 @@ def train_val_DCEC(
 
 
 def main():
+    try:
+        os.makedirs(os.path.join(cfg.experiments, cfg.exp))
+        os.makedirs(os.path.join(cfg.tables, cfg.exp))
+        os.makedirs(os.path.join(cfg.figures, cfg.exp, 'dcec'))
+        os.makedirs(os.path.join(cfg.models, cfg.exp, 'dcec'))
+    except:
+        print('WARNING: Experiment directories already exists.')
+
     # Get datasets
-    directories, file_list = get_filenames_list(cfg.processed_data)
-    x_train, y_train, x_val, y_val, x_test, y_test = create_tensors(
-        file_list, directories)
+    x_train, y_train = load_dataset('x_train.npy', 'y_train.npy')
+    x_val, y_val = load_dataset('x_val.npy', 'y_val.npy')
+    x_test, y_test = load_dataset('x_test.npy', 'y_test.npy')
 
     model, y_pred_last = init_kmeans(
         cae=cfg.cae,

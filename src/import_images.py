@@ -28,7 +28,7 @@ val_size = 0.7
 # 0.7, 0.2 senza augmentation
 # 0.4, 0.4 con augmentation (j=2)
 # 0.3, 0.4 con j=3
-j = 2  # scale of augmentation
+j = 1  # scale of augmentation
 
 # ------------------------------------------------------------------------------
 

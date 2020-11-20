@@ -1,13 +1,13 @@
 from predict import pred_cae
 import random
 import os
-from build_features import get_filenames_list, create_tensors
 import config as cfg
 import pandas as pd
 from keras.models import Model
 from sklearn.cluster import KMeans
 from nets import ClusteringLayer
 from metrics import nmi, ari, acc
+from build_and_save_features import load_dataset
 
 
 def pretrainCAE(
@@ -68,19 +68,17 @@ def init_kmeans(cae, n_clusters, ce_weights, n_init_kmeans, x, y, gamma):
 
 if __name__ == "__main__":
     # get datasets
-    directories, file_list = get_filenames_list(cfg.processed_data)
-    x_train, y_train, x_val, y_val, x_test, y_test = create_tensors(
-        file_list, directories)
+    x_train, y_train = load_dataset('x_train.npy', 'y_train.npy')
+    x_val, y_val = load_dataset('x_val.npy', 'y_val.npy')
+    x_test, y_test = load_dataset('x_test.npy', 'y_test.npy')
 
     try:
         os.makedirs(os.path.join(cfg.experiments, cfg.exp))
         os.makedirs(os.path.join(cfg.tables, cfg.exp))
         os.makedirs(os.path.join(cfg.figures, cfg.exp, 'cae'))
-        os.makedirs(os.path.join(cfg.figures, cfg.exp, 'dcec'))
         os.makedirs(os.path.join(cfg.models, cfg.exp, 'cae'))
-        os.makedirs(os.path.join(cfg.models, cfg.exp, 'dcec'))
     except:
-        print('Experiment directories already there.')
+        print('WARNING: Experiment directories already exists.')
 
     # pretrain CAE
     pretrainCAE(
@@ -102,13 +100,13 @@ if __name__ == "__main__":
         figures=cfg.figures,
         exp=cfg.exp,
         n=random.randint(0, 20),
-        n_train='first_train_'
+        n_train='first_pretrain_'
     )
 
     # save metrics to csv
     df = pd.DataFrame(data=cfg.d_cae)
     df.to_csv(
-        os.path.join(cfg.tables, cfg.exp, 'cae_first_train_metrics.csv'), index=False)
+        os.path.join(cfg.tables, cfg.exp, 'cae_train.csv'), index=False)
 
     _, _ = init_kmeans(
         cae=cfg.cae,

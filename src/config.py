@@ -10,14 +10,16 @@ n_clusters = len(scans)
 
 # Paths
 processed_data = '/home/fquaren/unimib/tesi/data/processed/'
+numpy = '/home/fquaren/unimib/tesi/data/processed/numpy'
 train_data = '/home/fquaren/unimib/tesi/data/processed/train'
+val_data = '/home/fquaren/unimib/tesi/data/processed/train'
 test_data = '/home/fquaren/unimib/tesi/data/processed/test'
 models = '/home/fquaren/unimib/tesi/models'
 tables = '/home/fquaren/unimib/tesi/data/tables'
 figures = '/home/fquaren/unimib/tesi/reports/figures'
 experiments = '/home/fquaren/unimib/tesi/experiments'
 
-exp = 'test_small_batch_size'
+exp = 'test_201120_1'
 
 cae_models = os.path.join(models, exp, 'cae')
 cae_weights = os.path.join(models, exp, 'cae', 'cae_weights')
