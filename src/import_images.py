@@ -16,10 +16,17 @@ def copyImages(sources, _file_names, directory):
     print('Copied.')
 
 
+
+
+
+
+
+
+
 # SETTINGS
 
 # raw data paths
-CT = '../data/raw/CT/'
+CT = '/home/fquaren/unimib/tesi/data/raw/CT/'
 MRI = '../data/raw/MRI/'
 PET = '../data/raw/PET/'
 train_size = 0.5
@@ -28,7 +35,7 @@ val_size = 0.7
 # 0.7, 0.2 senza augmentation
 # 0.4, 0.4 con augmentation (j=2)
 # 0.3, 0.4 con j=3
-j = 1  # scale of augmentation
+j = 0  # scale of augmentation
 
 # ------------------------------------------------------------------------------
 
@@ -100,3 +107,6 @@ for d, name, s in zip(processed_dirs, _file_names, struct):
 
 data_aumgentation(j, processed_data, processed_dirs, train_file_names)
 check_data(processed_data, processed_dirs, val_file_names, test_file_names)
+
+
+

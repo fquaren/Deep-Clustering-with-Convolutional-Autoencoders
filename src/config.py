@@ -1,25 +1,33 @@
 import os
-from keras.optimizers.schedules import InverseTimeDecay
+import tensorflow as tf
+from keras.optimizers.schedules import PiecewiseConstantDecay
 from keras.initializers import VarianceScaling
-from keras.callbacks import TensorBoard, EarlyStopping, ModelCheckpoint
+from keras.callbacks import EarlyStopping, ModelCheckpoint
 import nets
 from tensorflow.keras.optimizers import Adam
 
 scans = ['CT', 'MRI', 'PET']
-n_clusters = len(scans)
+n_clusters = 3  # len(scans)
 
 # Paths
 processed_data = '/home/fquaren/unimib/tesi/data/processed/'
 numpy = '/home/fquaren/unimib/tesi/data/processed/numpy'
-train_data = '/home/fquaren/unimib/tesi/data/processed/train'
-val_data = '/home/fquaren/unimib/tesi/data/processed/train'
-test_data = '/home/fquaren/unimib/tesi/data/processed/test'
+
+CT = '/home/fquaren/unimib/tesi/data/raw/CT'
+MRI = '/home/fquaren/unimib/tesi/data/raw/MRI'
+PET = '/home/fquaren/unimib/tesi/data/raw/PET'
+# train:    ct-2, ct-3,    mri-1, mri-3,    pet-2, pet-3
+# val:      ct-4, ct-5,    mri-5, mri-6,    pet-4
+# test:     ct-1,          mri-2,           pet-1
+train_directory = '/home/fquaren/unimib/tesi/data/raw/train'
+val_directory = '/home/fquaren/unimib/tesi/data/raw/val'
+test_directory = '/home/fquaren/unimib/tesi/data/raw/test'
 models = '/home/fquaren/unimib/tesi/models'
 tables = '/home/fquaren/unimib/tesi/data/tables'
 figures = '/home/fquaren/unimib/tesi/reports/figures'
 experiments = '/home/fquaren/unimib/tesi/experiments'
 
-exp = 'test_201120_1'
+exp = 'test'
 
 cae_models = os.path.join(models, exp, 'cae')
 cae_weights = os.path.join(models, exp, 'cae', 'cae_weights')
@@ -33,10 +41,9 @@ init = VarianceScaling(
     distribution='uniform'
 )
 pretrain_epochs = 1000
-cae_batch_size = 64
+cae_batch_size = 6
 my_callbacks = [
     EarlyStopping(patience=10, monitor='val_loss'),
-    TensorBoard(log_dir=os.path.join(experiments, exp)),
     ModelCheckpoint(
         filepath=cae_weights,
         save_best_only=True,
@@ -48,23 +55,20 @@ cae_optim = 'adam'
 
 # Train DCEC settings
 n_init_kmeans = 100
-dcec_bs = 12
+dcec_bs = 3
 maxiter = 3000
-update_interval = 50
+update_interval = 150
 save_interval = update_interval
-tol = 0.1
+tol = 0.01
 gamma = 0.01
 index = 0
 
-initial_learning_rate = 0.001
-decay_steps = 0.1
-decay_rate = 0.001
-learning_rate_fn = InverseTimeDecay(
-    initial_learning_rate, decay_steps, decay_rate)
+step = tf.Variable(0, trainable=False)
+boundaries = [600, 1000]
+values = [1e-6, 5e-7, 1e-8]
+learning_rate_fn = PiecewiseConstantDecay(
+    boundaries, values)
 dcec_optim = Adam(learning_rate=learning_rate_fn)
-
-
-
 
 # Pandas dataframe
 d = {

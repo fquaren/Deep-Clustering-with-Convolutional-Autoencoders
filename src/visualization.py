@@ -11,7 +11,7 @@ from tqdm import tqdm
 import pandas as pd
 import config as cfg
 from nets import ClusteringLayer
-from build_features import get_filenames_list, create_tensors
+from build_and_save_features import load_dataset
 from metrics import acc, nmi, ari
 
 
@@ -211,9 +211,7 @@ def plot_confusion_matrix(y_true, y_pred, save_dir):
 
 
 if __name__ == "__main__":
-    directories, file_list = get_filenames_list(cfg.processed_data)
-    _, _, _, _, x_test, y_test = create_tensors(
-        file_list, directories)
+    x_test, y_test = load_dataset('x_test.npy', 'y_test.npy')
 
     cae, encoder = cfg.cae
     clustering_layer = ClusteringLayer(
@@ -243,16 +241,16 @@ if __name__ == "__main__":
 
     # --- DCEC ---
     # plot tsne dcec iterations during training
-    plot_dcec_tsne(
-        model=model,
-        models_directory=os.path.join(cfg.models, cfg.exp, 'dcec'),
-        figures=os.path.join(cfg.figures, cfg.exp, 'dcec'),
-        dataset=x_test
-    )
+    # plot_dcec_tsne(
+    #     model=model,
+    #     models_directory=os.path.join(cfg.models, cfg.exp, 'dcec'),
+    #     figures=os.path.join(cfg.figures, cfg.exp, 'dcec'),
+    #     dataset=x_test
+    # )
 
     # plot train metrics
     plot_train_metrics(
-        file=os.path.join(cfg.tables, 'dcec_train_metrics.csv'),
+        file=os.path.join(cfg.tables, cfg.exp, 'dcec_train_metrics.csv'),
         save_dir=os.path.join(cfg.figures, cfg.exp, 'dcec')
     )
 

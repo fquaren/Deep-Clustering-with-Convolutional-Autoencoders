@@ -11,7 +11,7 @@ from build_and_save_features import load_dataset
 
 
 def gamma_function(ite):
-    return 1e-3 + (1-1/ite)*1e-3
+    return 0.01 + (1-1/ite)*0.01
 
 
 def train_val_DCEC(
@@ -24,19 +24,16 @@ def train_val_DCEC(
     train_loss = [0, 0, 0]
     val_loss = [0, 0, 0]
 
-    # Train and val
-    for ite in tqdm(range(int(maxiter))):
-        if ite % update_interval == 0:
-            # if ite == 0:
-            #     gamma = 1e-3
-            # else:
-            #     gamma = gamma_function(ite)
-            #     print(gamma)
-            model.compile(
+    model.compile(
                 loss=['kld', 'mse'],
                 loss_weights=[cfg.gamma, 1],
                 optimizer=cfg.dcec_optim
             )
+    
+    # Train and val
+    for ite in tqdm(range(int(maxiter))):
+        if ite % update_interval == 0:
+
             q, _ = model.predict(x_train, verbose=0)
             p = target_distribution(q)
             val_q, _ = model.predict(x_val, verbose=0)
@@ -62,8 +59,9 @@ def train_val_DCEC(
                     ite, val_acc, val_nmi, val_ari, val_loss))
 
             # Check stop criterion on train -> TODO on validation?
-            diff = [f for f, i in enumerate(y_train_pred) if f != y_pred_last[i]]
-            delta_label = np.sum(diff).astype(
+            # diff = [f for i, f in enumerate(y_train_pred) if f != y_pred_last[i]]
+            # print(len(diff))
+            delta_label = np.sum(y_train_pred != y_pred_last).astype(
                 np.float32) / y_train_pred.shape[0]
             y_pred_last = np.copy(y_train_pred)
             if ite > 0 and delta_label < tol:
@@ -114,10 +112,14 @@ def train_val_DCEC(
         model.save_weights(
             os.path.join(path_models_dcec, 'dcec_model_final.h5'))
 
-        # Save metrics to csv
-        df = pd.DataFrame(data=dictionary)
-        # df.to_csv(os.path.join(
-        #     tables, exp, 'dcec_train_metrics.csv'), index=False)
+    # Save metrics to csv
+    df = pd.DataFrame(data=dictionary)
+    try: 
+        os.remove(os.path.join(tables, exp, 'dcec_train_metrics.csv'))
+    except:
+        pass
+    df.to_csv(os.path.join(
+        tables, exp, 'dcec_train_metrics.csv'), index=False)
 
 
 def main():
@@ -167,7 +169,7 @@ def main():
         model=model,
         weights=os.path.join(
             cfg.models, cfg.exp, 'dcec', 'dcec_model_final.h5'),
-        directory=cfg.test_data,
+        directory=cfg.test_directory,
         scans=cfg.scans,
         figures=cfg.figures,
         exp=cfg.exp,

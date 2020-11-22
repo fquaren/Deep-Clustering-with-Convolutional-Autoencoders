@@ -103,53 +103,40 @@ def read_images(path):
             labels.append(1)
         if 'PET' in i:
             labels.append(2)
-        img = io.imread(i)
-        img = cv2.resize(
-            img, dsize=(192, 192), interpolation=cv2.INTER_LANCZOS4)
+        img = cv2.imread(i, cv2.IMREAD_GRAYSCALE)
+        img = cv2.resize(img, dsize=(144, 144), interpolation=cv2.INTER_LANCZOS4)
         images.append(img)
     y = np.concatenate((labels,))
     x = np.dstack(images)
     x = np.rollaxis(x, -1)
     x = x.reshape(x.shape + (1,))
-    x = x/255.
+    #x = x/255.
+    x = x-np.mean(x)
+    x /= np.std(x)
+
     return x, y
 
 
-def create_tensors(_final_file_names, directories):
+def create_tensors(path):
     '''
     uses the read_images function to create the tensors and labels for train,
     validation and test dataset.
     '''
-    train_paths = []
-    val_paths = []
-    test_paths = []
-    _paths = [train_paths, val_paths, test_paths]
-
-    for path, name, directory in zip(_paths, _final_file_names, directories):
-        for f in name:
-            path.append(directory+f)
-
-    x_train, y_train = read_images(train_paths)
-    x_val, y_val = read_images(val_paths)
-    x_test, y_test = read_images(test_paths)
-
-    print('Train dataset:', x_train.shape)
-    print('Validation dataset:', x_val.shape)
-    print('Test dataset:', x_test.shape)
-
-    return x_train, y_train, x_val, y_val, x_test, y_test
+    images = [os.path.join(path, f) for f in os.listdir(path) if f.endswith('.png')]
+    random.shuffle(images)
+    x, y = read_images(images)
+    return x, y
 
 
-def save_images_to_numpy(x_train, y_train, x_val, y_val, x_test, y_test):
-    numpy = os.path.join(processed_data, 'numpy')
-    os.makedirs(numpy, exist_ok=True)
-    np.save(os.path.join(numpy, 'x_train.npy'), x_train)
-    np.save(os.path.join(numpy, 'x_val.npy'), x_val)
-    np.save(os.path.join(numpy, 'x_test.npy'), x_test)
-    np.save(os.path.join(numpy, 'y_train.npy'), y_train)
-    np.save(os.path.join(numpy, 'y_val.npy'), y_val)
-    np.save(os.path.join(numpy, 'y_test.npy'), y_test)
-    print('Images saved.')
+def save_images_to_numpy(x_train, y_train, x_val, y_val, x_test, y_test, path):
+    os.makedirs(path, exist_ok=True)
+    np.save(os.path.join(path, 'x_train.npy'), x_train)
+    np.save(os.path.join(path, 'x_val.npy'), x_val)
+    np.save(os.path.join(path, 'x_test.npy'), x_test)
+    np.save(os.path.join(path, 'y_train.npy'), y_train)
+    np.save(os.path.join(path, 'y_val.npy'), y_val)
+    np.save(os.path.join(path, 'y_test.npy'), y_test)
+    print('Images saved to {} as numpy arrays.'.format(path))
 
 
 def load_dataset(x, y):
@@ -158,8 +145,16 @@ def load_dataset(x, y):
     return (x, y)
 
 
+def main():
+    # list file in directories
+    x_train, y_train = create_tensors(cfg.train_directory)
+    x_val, y_val = create_tensors(cfg.val_directory)
+    x_test, y_test = create_tensors(cfg.test_directory)
+    print('Train: {}\nValidation: {}\nTest: {}'.format(
+        x_train.shape, x_val.shape, x_test.shape))
+    save_images_to_numpy(
+        x_train, y_train, x_val, y_val, x_test, y_test, cfg.numpy)
+
+
 if __name__ == "__main__":
-    directories, file_list = get_filenames_list(cfg.processed_data)
-    x_train, y_train, x_val, y_val, x_test, y_test = create_tensors(
-        file_list, directories)
-    save_images_to_numpy(x_train, y_train, x_val, y_val, x_test, y_test)
+    main()

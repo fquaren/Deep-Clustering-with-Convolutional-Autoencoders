@@ -72,14 +72,11 @@ if __name__ == "__main__":
     x_val, y_val = load_dataset('x_val.npy', 'y_val.npy')
     x_test, y_test = load_dataset('x_test.npy', 'y_test.npy')
 
-    try:
-        os.makedirs(os.path.join(cfg.experiments, cfg.exp))
-        os.makedirs(os.path.join(cfg.tables, cfg.exp))
-        os.makedirs(os.path.join(cfg.figures, cfg.exp, 'cae'))
-        os.makedirs(os.path.join(cfg.models, cfg.exp, 'cae'))
-    except:
-        print('WARNING: Experiment directories already exists.')
-
+    os.makedirs(os.path.join(cfg.experiments, cfg.exp), exist_ok=True)
+    os.makedirs(os.path.join(cfg.tables, cfg.exp), exist_ok=True)
+    os.makedirs(os.path.join(cfg.figures, cfg.exp, 'cae'), exist_ok=True)
+    os.makedirs(os.path.join(cfg.models, cfg.exp, 'cae'), exist_ok=True)
+    
     # pretrain CAE
     pretrainCAE(
         model=cfg.cae,
@@ -95,7 +92,7 @@ if __name__ == "__main__":
     pred_cae(
         net=cfg.cae,
         weights=os.path.join(cfg.models, cfg.exp, 'cae', 'cae_weights'),
-        directory=cfg.test_data,
+        directory=cfg.train_directory,
         scans=cfg.scans,
         figures=cfg.figures,
         exp=cfg.exp,
@@ -113,7 +110,7 @@ if __name__ == "__main__":
         n_clusters=cfg.n_clusters,
         ce_weights=cfg.ce_weights,
         n_init_kmeans=cfg.n_init_kmeans,
-        x=x_test,
-        y=y_test,
+        x=x_train,
+        y=y_train,
         gamma=cfg.gamma
     )
