@@ -109,11 +109,11 @@ def read_images(path):
     y = np.concatenate((labels,))
     x = np.dstack(images)
     x = np.rollaxis(x, -1)
-    x = x.reshape(x.shape + (1,))
-    #x = x/255.
-    x = x-np.mean(x)
-    x /= np.std(x)
-
+    # x = x.reshape(x.shape + (1,))
+    # x = x/255.
+    import pdb; pdb.set_trace()
+    x = x - np.mean(x)  # normalization
+    x = x / np.std(x)
     return x, y
 
 
@@ -122,10 +122,19 @@ def create_tensors(path):
     uses the read_images function to create the tensors and labels for train,
     validation and test dataset.
     '''
-    images = [os.path.join(path, f) for f in os.listdir(path) if f.endswith('.png')]
-    random.shuffle(images)
-    x, y = read_images(images)
-    return x, y
+    X = []
+    Y = []
+    for directory in os.listdir(path):
+        images = [os.path.join(path, directory, f) for f in os.listdir(os.path.join(path, directory)) if f.endswith('.png')]
+        x, y = read_images(images)  # normalization done at the scan level
+        X.extend(x)
+        Y.extend(y)
+    X = np.dstack(X)
+    X = np.rollaxis(X, -1)
+    X = X.reshape(X.shape + (1,))
+    random.shuffle(X)
+    random.shuffle(Y)
+    return X, Y
 
 
 def save_images_to_numpy(x_train, y_train, x_val, y_val, x_test, y_test, path):

@@ -102,8 +102,11 @@ if __name__ == "__main__":
 
     # save metrics to csv
     df = pd.DataFrame(data=cfg.d_cae)
-    df.to_csv(
-        os.path.join(cfg.tables, cfg.exp, 'cae_train.csv'), index=False)
+    try:
+        os.remove(os.path.join(cfg.tables, cfg.exp, 'cae_train.csv'))
+    except:
+        pass
+    df.to_csv(os.path.join(cfg.tables, cfg.exp, 'cae_train.csv'), index=False)
 
     _, _ = init_kmeans(
         cae=cfg.cae,

@@ -41,7 +41,7 @@ init = VarianceScaling(
     distribution='uniform'
 )
 pretrain_epochs = 1000
-cae_batch_size = 6
+cae_batch_size = 9
 my_callbacks = [
     EarlyStopping(patience=10, monitor='val_loss'),
     ModelCheckpoint(
