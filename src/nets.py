@@ -2,27 +2,39 @@ from keras.layers import Input, Dense, Conv2D, Flatten, Reshape, Conv2DTranspose
 from keras.models import Model
 from keras import backend as K
 from keras.engine.topology import InputSpec, Layer
+from tensorflow.keras import initializers
 
 
-def CAE_Conv2DTranspose(input_shape=(144, 144, 1), filters=[16, 32, 64, 512, 3]):
+def CAE_Conv2DTranspose(input_shape=(192, 192, 1), filters=[16, 32, 64, 256, 3]):
 
     input_img = Input(shape=input_shape)
 
     # Encoder
-    x = Conv2D(filters[0], 3, strides=2, padding='same', activation='relu', name='conv1', input_shape=input_shape)(input_img)
-    x = Conv2D(filters[1], 5, strides=3, padding='same', activation='relu', name='conv2')(x)
+    x = Conv2D(filters[0], 5, strides=3, padding='same', activation='relu', name='conv1', input_shape=input_shape)(input_img)
+    x = Conv2D(filters[1], 3, strides=2, padding='same', activation='relu', name='conv2')(x)
+    x = Conv2D(filters[2], 3, strides=2, padding='same', activation='relu', name='conv3')(x)
+
 
     x = Flatten(name='flatten_1')(x)
 
-    encoded = Dense(units=filters[-2], activation='relu', name='dense1')(x)
+    encoded = Dense(units=filters[-2], activation='relu', name='encoded')(x)
+    
+    y = Dense(
+        units=filters[-1], 
+        # kernel_initializer=initializers.VarianceScaling(scale=0.1, mode="fan_out", distribution="uniform"),
+        # bias_initializer=initializers.Zeros(),
+        activation='relu', 
+        name='input_clustering'
+    )(encoded)
 
     # Decoder
-    x = Dense(units=24*24*filters[1], activation='relu')(encoded)
-    x = Reshape((24, 24, filters[1]))(x)
-    x = Conv2DTranspose(filters[0], 5, strides=3, padding='same', activation='relu', name='deconv2')(x)
-    decoded = Conv2DTranspose(1, 3, strides=2, padding='same', name='deconv1')(x)
+    x = Dense(units=16*16*filters[2], activation='relu')(encoded)
+    x = Reshape((16, 16, filters[2]))(x)
+    x = Conv2DTranspose(filters[1], 3, strides=2, padding='same', activation='relu', name='deconv3')(x)
+    x = Conv2DTranspose(filters[0], 3, strides=2, padding='same', activation='relu', name='deconv2')(x)
+    decoded = Conv2DTranspose(1, 5, strides=3, padding='same', name='deconv1')(x)
 
-    return Model(inputs=input_img, outputs=decoded, name='CAE'), Model(inputs=input_img, outputs=encoded, name='CE')
+    return Model(inputs=input_img, outputs=decoded, name='CAE'), Model(inputs=input_img, outputs=[encoded, y], name='CE')
 
 
 def CAE_Conv2DTranspose_old(input_shape=(192, 192, 1), filters=[16, 32, 64, 3]):
@@ -169,7 +181,7 @@ class ClusteringLayer(Layer):
             + (K.sum(K.square(K.expand_dims(inputs, axis=1)
             - self.clusters), axis=2) / self.alpha))
         q **= (self.alpha + 1.0) / 2.0
-        # Make sure each sample's 10 values add up to 1.
+        # Make sure each sample's 3 values add up to 1.
         q = K.transpose(K.transpose(q) / K.sum(q, axis=1))
         return q
 

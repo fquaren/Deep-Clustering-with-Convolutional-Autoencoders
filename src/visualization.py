@@ -29,7 +29,7 @@ def plot_cae_tnse(autoencoder, encoder, models_directory, figures, dataset):
     """
     autoencoder.load_weights(os.path.join(models_directory, 'cae_weights'))
     kmeans = KMeans(n_clusters=cfg.n_clusters, n_init=50)
-    features = encoder.predict(dataset)
+    features = encoder.predict(dataset)[1]
     y_pred = kmeans.fit_predict(features)
     tsne = TSNE(n_components=2, perplexity=50)
     embedding = tsne.fit_transform(features)
@@ -215,7 +215,7 @@ if __name__ == "__main__":
 
     cae, encoder = cfg.cae
     clustering_layer = ClusteringLayer(
-        cfg.n_clusters, name='clustering')(encoder.output)
+        cfg.n_clusters, name='clustering')(encoder.output[1])
     model = Model(
         inputs=encoder.input, outputs=[clustering_layer, cae.output])
     model.compile(

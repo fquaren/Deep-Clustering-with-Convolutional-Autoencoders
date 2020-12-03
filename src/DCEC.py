@@ -10,10 +10,6 @@ from CAE import init_kmeans
 from build_and_save_features import load_dataset
 
 
-def gamma_function(ite):
-    return 0.01 + (1-1/ite)*0.01
-
-
 def train_val_DCEC(
         maxiter, update_interval, save_interval, x_train, y_train, x_val,
         y_val, y_pred_last, model, tol, index, dcec_bs, dictionary,
@@ -25,10 +21,10 @@ def train_val_DCEC(
     val_loss = [0, 0, 0]
 
     model.compile(
-                loss=['kld', 'mse'],
-                loss_weights=[cfg.gamma, 1],
-                optimizer=cfg.dcec_optim
-            )
+        loss=['kld', 'mse'],
+        loss_weights=[cfg.gamma, 1],
+        optimizer=cfg.dcec_optim
+    )
     
     # Train and val
     for ite in tqdm(range(int(maxiter))):
@@ -58,7 +54,6 @@ def train_val_DCEC(
                 print('Iter {}: val acc={}, val nmi={}, val ari={}, val loss={}'.format(
                     ite, val_acc, val_nmi, val_ari, val_loss))
 
-            # Check stop criterion on train -> TODO on validation?
             # diff = [f for i, f in enumerate(y_train_pred) if f != y_pred_last[i]]
             # print(len(diff))
             delta_label = np.sum(y_train_pred != y_pred_last).astype(
@@ -68,7 +63,7 @@ def train_val_DCEC(
                 print('delta_label ', delta_label, '< tol ', tol)
                 print('Reached tolerance threshold. Stopping training.')
                 break
-
+        
         # Train on batch
         x_train_batch = np.array(random.sample(list(x_train), dcec_bs))
         train_p_batch = np.array(random.sample(list(p), dcec_bs))
@@ -141,8 +136,8 @@ def main():
         n_clusters=cfg.n_clusters,
         ce_weights=cfg.ce_weights,
         n_init_kmeans=cfg.n_init_kmeans,
-        x=x_test,
-        y=y_test,
+        x=x_train,
+        y=y_train,
         gamma=cfg.gamma
     )
 

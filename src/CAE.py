@@ -37,19 +37,16 @@ def init_kmeans(cae, n_clusters, ce_weights, n_init_kmeans, x, y, gamma):
     autoencoder, encoder = cae
 
     # init DCEC
-    clustering_layer = ClusteringLayer(
-        n_clusters, name='clustering')(encoder.output)
-    model = Model(
-        inputs=encoder.input, outputs=[clustering_layer, autoencoder.output])
-    model.compile(
-        loss=['kld', 'mse'], loss_weights=[gamma, 1], optimizer=cfg.dcec_optim)
+    clustering_layer = ClusteringLayer(n_clusters, name='clustering')(encoder.output[1])
+    model = Model(inputs=encoder.input, outputs=[clustering_layer, autoencoder.output])
+    model.compile(loss=['kld', 'mse'], loss_weights=[gamma, 1], optimizer=cfg.dcec_optim)
     model.summary()
 
     # Initialize model using k-means centers
     print('k-means...')
     encoder.load_weights(cfg.ce_weights)
     kmeans = KMeans(n_clusters=n_clusters, n_init=n_init_kmeans)
-    input_cluster = encoder.predict(x)
+    input_cluster = encoder.predict(x)[1]
     y_pred = kmeans.fit_predict(input_cluster)
     y_pred_last = y_pred.copy()
     centers = kmeans.cluster_centers_
@@ -62,6 +59,10 @@ def init_kmeans(cae, n_clusters, ce_weights, n_init_kmeans, x, y, gamma):
             ari(y, y_pred)
         )
     )
+
+    cfg.d_cae['acc'] = acc(y, y_pred)
+    cfg.d_cae['nmi'] = nmi(y, y_pred)
+    cfg.d_cae['ari'] = ari(y, y_pred)
 
     return model, y_pred_last
 
@@ -78,42 +79,39 @@ if __name__ == "__main__":
     os.makedirs(os.path.join(cfg.models, cfg.exp, 'cae'), exist_ok=True)
     
     # pretrain CAE
-    pretrainCAE(
-        model=cfg.cae,
-        x_train=x_train,
-        x_val=x_val,
-        batch_size=cfg.cae_batch_size,
-        pretrain_epochs=cfg.pretrain_epochs,
-        my_callbacks=cfg.my_callbacks,
-        cae_models=cfg.cae_models,
-        optim=cfg.cae_optim
-    )
+    for i in range(10):
+        print(f'{i}-esimo pretrain')
+        pretrainCAE(
+            model=cfg.cae,
+            x_train=x_train,
+            x_val=x_val,
+            batch_size=cfg.cae_batch_size,
+            pretrain_epochs=cfg.pretrain_epochs,
+            my_callbacks=cfg.my_callbacks,
+            cae_models=cfg.cae_models,
+            optim=cfg.cae_optim
+        )
 
-    pred_cae(
-        net=cfg.cae,
-        weights=os.path.join(cfg.models, cfg.exp, 'cae', 'cae_weights'),
-        directory=cfg.train_directory,
-        scans=cfg.scans,
-        figures=cfg.figures,
-        exp=cfg.exp,
-        n=random.randint(0, 20),
-        n_train='first_pretrain_'
-    )
+        pred_cae(
+            net=cfg.cae,
+            weights=os.path.join(cfg.models, cfg.exp, 'cae', 'cae_weights'),
+            directory=cfg.train_directory,
+            scans=cfg.scans,
+            figures=cfg.figures,
+            exp=cfg.exp,
+            n=random.randint(0, 10)
+        )
 
-    # save metrics to csv
-    df = pd.DataFrame(data=cfg.d_cae)
-    try:
-        os.remove(os.path.join(cfg.tables, cfg.exp, 'cae_train.csv'))
-    except:
-        pass
-    df.to_csv(os.path.join(cfg.tables, cfg.exp, 'cae_train.csv'), index=False)
+        _, _ = init_kmeans(
+            cae=cfg.cae,
+            n_clusters=cfg.n_clusters,
+            ce_weights=cfg.ce_weights,
+            n_init_kmeans=cfg.n_init_kmeans,
+            x=x_train,
+            y=y_train,
+            gamma=cfg.gamma
+        )
 
-    _, _ = init_kmeans(
-        cae=cfg.cae,
-        n_clusters=cfg.n_clusters,
-        ce_weights=cfg.ce_weights,
-        n_init_kmeans=cfg.n_init_kmeans,
-        x=x_train,
-        y=y_train,
-        gamma=cfg.gamma
-    )
+        # save metrics to csv
+        df = pd.DataFrame(data=cfg.d_cae)
+        df.to_csv(os.path.join(cfg.tables, cfg.exp, str(i)+'-esimo_cae_train.csv'), index=False)

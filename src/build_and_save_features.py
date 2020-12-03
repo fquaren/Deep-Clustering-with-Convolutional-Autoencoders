@@ -104,16 +104,12 @@ def read_images(path):
         if 'PET' in i:
             labels.append(2)
         img = cv2.imread(i, cv2.IMREAD_GRAYSCALE)
-        img = cv2.resize(img, dsize=(144, 144), interpolation=cv2.INTER_LANCZOS4)
+        img = cv2.resize(img, dsize=(192, 192), interpolation=cv2.INTER_LANCZOS4)
         images.append(img)
     y = np.concatenate((labels,))
     x = np.dstack(images)
     x = np.rollaxis(x, -1)
-    # x = x.reshape(x.shape + (1,))
-    # x = x/255.
-    import pdb; pdb.set_trace()
-    x = x - np.mean(x)  # normalization
-    x = x / np.std(x)
+    x = x/255.
     return x, y
 
 
@@ -131,6 +127,8 @@ def create_tensors(path):
         Y.extend(y)
     X = np.dstack(X)
     X = np.rollaxis(X, -1)
+    X -= np.mean(X)  # mean subtraction
+    # X /= np.std(X, axis = 0)  # normalization
     X = X.reshape(X.shape + (1,))
     random.shuffle(X)
     random.shuffle(Y)

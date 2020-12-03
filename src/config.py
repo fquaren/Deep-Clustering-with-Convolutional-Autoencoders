@@ -27,7 +27,7 @@ tables = '/home/fquaren/unimib/tesi/data/tables'
 figures = '/home/fquaren/unimib/tesi/reports/figures'
 experiments = '/home/fquaren/unimib/tesi/experiments'
 
-exp = 'test'
+exp = 'finding_best_acc'
 
 cae_models = os.path.join(models, exp, 'cae')
 cae_weights = os.path.join(models, exp, 'cae', 'cae_weights')
@@ -35,15 +35,11 @@ ce_weights = os.path.join(models, exp, 'cae', 'ce_weights')
 
 # Pretrain CAE settings
 cae = nets.CAE_Conv2DTranspose()
-init = VarianceScaling(
-    scale=1./3.,
-    mode='fan_in',
-    distribution='uniform'
-)
-pretrain_epochs = 1000
+
+pretrain_epochs = 10000
 cae_batch_size = 9
 my_callbacks = [
-    EarlyStopping(patience=10, monitor='val_loss'),
+    EarlyStopping(patience=50, monitor='val_loss'),
     ModelCheckpoint(
         filepath=cae_weights,
         save_best_only=True,
@@ -54,10 +50,10 @@ my_callbacks = [
 cae_optim = 'adam'
 
 # Train DCEC settings
-n_init_kmeans = 100
-dcec_bs = 3
+n_init_kmeans = 50
+dcec_bs = 12
 maxiter = 3000
-update_interval = 150
+update_interval = 40
 save_interval = update_interval
 tol = 0.01
 gamma = 0.01
@@ -65,7 +61,7 @@ index = 0
 
 step = tf.Variable(0, trainable=False)
 boundaries = [600, 1000]
-values = [1e-6, 5e-7, 1e-8]
+values = [1e-6, 5e-7, 1e-7]
 learning_rate_fn = PiecewiseConstantDecay(
     boundaries, values)
 dcec_optim = Adam(learning_rate=learning_rate_fn)
