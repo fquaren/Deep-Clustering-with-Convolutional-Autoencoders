@@ -11,10 +11,23 @@ from build_and_save_features import load_dataset
 
 
 def train_val_DCEC(
-        maxiter, update_interval, save_interval, x_train, y_train, x_val,
-        y_val, y_pred_last, model, tol, index, dcec_bs, dictionary,
-        path_models_dcec, tables, exp
-        ):
+        maxiter,
+        update_interval,
+        save_interval,
+        x_train,
+        y_train,
+        x_val,
+        y_val,
+        y_pred_last,
+        model,
+        tol,
+        index,
+        dcec_bs,
+        dictionary,
+        path_models_dcec,
+        tables,
+        exp
+            ):
 
     # Init loss
     train_loss = [0, 0, 0]
@@ -25,7 +38,7 @@ def train_val_DCEC(
         loss_weights=[cfg.gamma, 1],
         optimizer=cfg.dcec_optim
     )
-    
+
     # Train and val
     for ite in tqdm(range(int(maxiter))):
         if ite % update_interval == 0:
@@ -54,10 +67,10 @@ def train_val_DCEC(
                 print('Iter {}: val acc={}, val nmi={}, val ari={}, val loss={}'.format(
                     ite, val_acc, val_nmi, val_ari, val_loss))
 
+            # Check stop criterion on train -> TODO on validation?
             # diff = [f for i, f in enumerate(y_train_pred) if f != y_pred_last[i]]
             # print(len(diff))
-            delta_label = np.sum(y_train_pred != y_pred_last).astype(
-                np.float32) / y_train_pred.shape[0]
+            delta_label = np.sum(y_train_pred != y_pred_last).astype(np.float32) / y_train_pred.shape[0]
             y_pred_last = np.copy(y_train_pred)
             if ite > 0 and delta_label < tol:
                 print('delta_label ', delta_label, '< tol ', tol)
@@ -131,15 +144,26 @@ def main():
     x_val, y_val = load_dataset('x_val.npy', 'y_val.npy')
     x_test, y_test = load_dataset('x_test.npy', 'y_test.npy')
 
-    model, y_pred_last = init_kmeans(
+    model, y_pred_last, metrics = init_kmeans(
         cae=cfg.cae,
         n_clusters=cfg.n_clusters,
         ce_weights=cfg.ce_weights,
         n_init_kmeans=cfg.n_init_kmeans,
         x=x_train,
         y=y_train,
-        gamma=cfg.gamma
     )
+    
+    count = 0
+    while metrics['acc'] < 0.5 and count < 100:
+        model, y_pred_last, metrics = init_kmeans(
+            cae=cfg.cae,
+            n_clusters=cfg.n_clusters,
+            ce_weights=cfg.ce_weights,
+            n_init_kmeans=cfg.n_init_kmeans,
+            x=x_train,
+            y=y_train,
+        )
+        count += 1
 
     train_val_DCEC(
         exp=cfg.exp,

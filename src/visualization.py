@@ -29,7 +29,7 @@ def plot_cae_tnse(autoencoder, encoder, models_directory, figures, dataset):
     """
     autoencoder.load_weights(os.path.join(models_directory, 'cae_weights'))
     kmeans = KMeans(n_clusters=cfg.n_clusters, n_init=50)
-    features = encoder.predict(dataset)[1]
+    features = encoder.predict(dataset)
     y_pred = kmeans.fit_predict(features)
     tsne = TSNE(n_components=2, perplexity=50)
     embedding = tsne.fit_transform(features)
@@ -41,7 +41,7 @@ def plot_cae_tnse(autoencoder, encoder, models_directory, figures, dataset):
 
 def plot_pretrain_metrics(file, save_dir):
     '''
-    This function read a csv file containing the pretraining metrics, plots
+    This function reads a csv file containing the pretraining metrics, plots
     them and saves an image in the figures folder.
     '''
     data = pd.read_csv(file)
@@ -215,7 +215,7 @@ if __name__ == "__main__":
 
     cae, encoder = cfg.cae
     clustering_layer = ClusteringLayer(
-        cfg.n_clusters, name='clustering')(encoder.output[1])
+        cfg.n_clusters, name='clustering')(encoder.output)
     model = Model(
         inputs=encoder.input, outputs=[clustering_layer, cae.output])
     model.compile(
@@ -241,12 +241,12 @@ if __name__ == "__main__":
 
     # --- DCEC ---
     # plot tsne dcec iterations during training
-    # plot_dcec_tsne(
-    #     model=model,
-    #     models_directory=os.path.join(cfg.models, cfg.exp, 'dcec'),
-    #     figures=os.path.join(cfg.figures, cfg.exp, 'dcec'),
-    #     dataset=x_test
-    # )
+    plot_dcec_tsne(
+        model=model,
+        models_directory=os.path.join(cfg.models, cfg.exp, 'dcec'),
+        figures=os.path.join(cfg.figures, cfg.exp, 'dcec'),
+        dataset=x_test
+    )
 
     # plot train metrics
     plot_train_metrics(
@@ -261,3 +261,5 @@ if __name__ == "__main__":
         save_dir=os.path.join(cfg.figures, cfg.exp, 'dcec')
     )
     print('final metrics:', metrics)
+
+# TODO https://machinelearningmastery.com/how-to-visualize-filters-and-feature-maps-in-convolutional-neural-networks/

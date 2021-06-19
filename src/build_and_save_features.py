@@ -8,86 +8,86 @@ from skimage import io
 from tqdm import tqdm
 import config as cfg
 import os
+import glob
 
 processed_data = cfg.processed_data
 
+# def get_filenames_list(processed_data):
+#     '''
+#     get list of filenames of images to create the train, val and test datasets
+#     with.
+#     '''
+#     directories = [
+#         processed_data+'train/',
+#         processed_data+'val/',
+#         processed_data+'test/'
+#     ]
 
-def get_filenames_list(processed_data):
-    '''
-    get list of filenames of images to create the train, val and test datasets
-    with.
-    '''
-    directories = [
-        processed_data+'train/',
-        processed_data+'val/',
-        processed_data+'test/'
-    ]
+#     # train_file_names = [f for f in listdir(
+#     #     directories[0]) if isfile(join(directories[0], f))]
+#     # val_file_names = [f for f in listdir(
+#     #     directories[1]) if isfile(join(directories[1], f))]
+#     # test_file_names = [f for f in listdir(
+#     #     directories[2]) if isfile(join(directories[2], f))]
 
-    # train_file_names = [f for f in listdir(
-    #     directories[0]) if isfile(join(directories[0], f))]
-    # val_file_names = [f for f in listdir(
-    #     directories[1]) if isfile(join(directories[1], f))]
-    # test_file_names = [f for f in listdir(
-    #     directories[2]) if isfile(join(directories[2], f))]
+#     # _file_names = [train_file_names, val_file_names, test_file_names]
 
-    # _file_names = [train_file_names, val_file_names, test_file_names]
+#     # numero immagini per categoria
+#     scans = ['CT', 'MRI', 'PET']
+#     numbers = []
+#     minimi = []
 
-    # numero immagini per categoria
-    scans = ['CT', 'MRI', 'PET']
-    numbers = []
-    minimi = []
+#     for directory in directories:
+#         for scan in scans:
+#             a = len([f for f in listdir(directory) if f[:2] == scan[:2]])
+#             print('Numbero di immagini', scan, 'in', directory, ':', a)
+#             numbers.append(a)
+#         minimi.append(min(numbers))
 
-    for directory in directories:
-        for scan in scans:
-            a = len([f for f in listdir(directory) if f[:2] == scan[:2]])
-            print('Numbero di immagini', scan, 'in', directory, ':', a)
-            numbers.append(a)
-        minimi.append(min(numbers))
+#     # creo la lista di file bilanciata: n.b  la percentuale viene mantenuta
+#     train_final_file_names = []
+#     val_final_file_names = []
+#     test_final_file_names = []
+#     _final_file_names = [
+#         train_final_file_names,
+#         val_final_file_names,
+#         test_final_file_names
+#     ]
 
-    # creo la lista di file bilanciata: n.b  la percentuale viene mantenuta
-    train_final_file_names = []
-    val_final_file_names = []
-    test_final_file_names = []
-    _final_file_names = [
-        train_final_file_names,
-        val_final_file_names,
-        test_final_file_names
-    ]
+#     lista = []
+#     for directory, minimo, name in zip(directories, minimi, _final_file_names):
+#         for scan in scans:
+#             lista = [f for f in listdir(directory) if f[:2] == scan[:2]]
+#             lista = lista[:minimo]
+#             name.extend(lista)  # estendo la lista (don't append)
 
-    lista = []
-    for directory, minimo, name in zip(directories, minimi, _final_file_names):
-        for scan in scans:
-            lista = [f for f in listdir(directory) if f[:2] == scan[:2]]
-            lista = lista[:minimo]
-            name.extend(lista)  # estendo la lista (don't append)
+#     # -------------------------------
 
-# -------------------------------
+#         # How I cicled ^^^
+#         #    minimo |
+#         #    name   |
+#         #    train  | val | test
+#         # CT    ... | ... | ...
+#         # MRI   ... | ... | ...
+#         # PET   ... | ... | ...
 
-    # How I cicled ^^^
-    #    minimo |
-    #    name   |
-    #    train  | val | test
-    # CT    ... | ... | ...
-    # MRI   ... | ... | ...
-    # PET   ... | ... | ...
+#     # ---------------------------------
 
-# ---------------------------------
+#     for el in _final_file_names:
+#         random.shuffle(el)
 
-    for el in _final_file_names:
-        random.shuffle(el)
+#     print("FINAL DATASETS")
+#     print("Training", len(train_final_file_names), ", Validation:", len(
+#         val_final_file_names), ", Test:", len(test_final_file_names))
 
-    print("FINAL DATASETS")
-    print("Training", len(train_final_file_names), ", Validation:", len(
-        val_final_file_names), ", Test:", len(test_final_file_names))
-
-    return directories, _final_file_names
+#     return directories, _final_file_names
 
 
 def read_images(path):
     '''
     Reads the images contained in path, creates two tensors (x, y) with images
     and labels.
-    N.B.: the images are reshaped and normalised.
+    N.B.: the images are reshaped.
 
     input: list of image paths
     output: (x, y)
@@ -104,7 +104,7 @@ def read_images(path):
         if 'PET' in i:
             labels.append(2)
         img = cv2.imread(i, cv2.IMREAD_GRAYSCALE)
-        img = cv2.resize(img, dsize=(192, 192), interpolation=cv2.INTER_LANCZOS4)
+        img = cv2.resize(img, dsize=(128, 128), interpolation=cv2.INTER_LANCZOS4)
         images.append(img)
     y = np.concatenate((labels,))
     x = np.dstack(images)
@@ -120,11 +120,9 @@ def create_tensors(path):
     '''
     X = []
     Y = []
-    for directory in os.listdir(path):
-        images = [os.path.join(path, directory, f) for f in os.listdir(os.path.join(path, directory)) if f.endswith('.png')]
-        x, y = read_images(images)  # normalization done at the scan level
-        X.extend(x)
-        Y.extend(y)
+
+    images = glob.glob(path+'/**.png')
+    X, Y = read_images(images)  # normalization done at the train directory level
     X = np.dstack(X)
     X = np.rollaxis(X, -1)
     X -= np.mean(X)  # mean subtraction

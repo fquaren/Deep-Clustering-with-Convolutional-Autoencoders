@@ -3,83 +3,90 @@ import os
 import random
 from os import listdir
 from os.path import isfile, join
-import imageio
-import skimage
-import skimage.io
-import skimage.transform
-from scipy import ndarray
+import config as cfg
+from glob import glob
+import cv2
 import numpy as np
 
 
-def random_rotation(image_array: ndarray):
-    '''
-    Pick a random degree of rotation between 25% on the left and 25% on the
-    right.
-    '''
-    random_degree = random.uniform(-15, 15)
-    return skimage.transform.rotate(image_array, random_degree)
-
-
-def add_noise(image_array: ndarray):
-    # sigma 0.01 default
-    return skimage.util.random_noise(image_array)
-
-
-def horizontal_flip(image_array: ndarray):
-    '''
-    Horizontal flipping of the image array.
-    '''
-    return image_array[:, ::-1]
-
-
-def vertical_flip(image_array: ndarray):
+def vertical_flip(image):
     '''
     Vertical flipping of the image array.
     '''
-    return image_array[::-1, :]
+    image = cv2.flip(image, 0)
+    return image
 
 
-def data_aumgentation(j, processed_data, processed_dirs, train_file_names):
+def horizontal_flip(image):
     '''
-    To data aumgentation on train_file_names (list of image names) saving them
-    in processed_data+processed_dirs[0] ('data/processed/train').
+    Horizontal flipping of the image array.
     '''
-    # our folder path containing some images
-    folder_path = os.path.join(processed_data, processed_dirs[0])
-    # the number of file to generate
-    num_files_desired = (len(train_file_names))*j
-    # loop on all files of the folder and build a list of files paths
-    images = [os.path.join(folder_path, f) for f in os.listdir(
-        folder_path) if os.path.isfile(os.path.join(folder_path, f))]
+    image = cv2.flip(image, 1)
+    return image
+
+
+def gaussian_noise(image):
+    row, col, ch = image.shape
+    mean = 0
+    var = 0.5
+    sigma = var**0.5
+    gauss = np.random.normal(mean, sigma, (row, col, ch))
+    gauss = gauss.reshape(row, col, ch)
+    noisy = image + gauss
+    return noisy
+
+
+def salt_and_pepper(image, prob=0.01):
+    '''
+    Add salt and pepper noise to image
+    prob: Probability of the noise
+    '''
+    output = np.zeros(image.shape, np.uint8)
+    thres = 1 - prob 
+    for i in range(image.shape[0]):
+        for j in range(image.shape[1]):
+            rdn = random.random()
+            if rdn < prob:
+                output[i][j] = 0
+            elif rdn > thres:
+                output[i][j] = 255
+            else:
+                output[i][j] = image[i][j]
+    return output
+
+
+def augmentation_on_train():
+    '''
+    To do data aumgentation on list of train images.
+    '''
+
+    folder_path = cfg.train_directory
+    images = glob(os.path.join(folder_path, '*.png'))
+    num_files_desired = int((len(images))/2)
+
     available_transformations = {
-        'rotate': random_rotation,
-        # 'horizontal_flip': horizontal_flip,
-        # 'vertical_flip': vertical_flip
+        'vertical_flip': vertical_flip,
+        'horizontal_flip': horizontal_flip,
+        # 'gaussian_noise': gaussian_noise,
+        # 'salt_and_pepper': salt_and_pepper
     }
     for i in tqdm(range(num_files_desired)):
-        # random image from the folder
         image_path = random.choice(images)
-        # read image as an two dimensional array of pixels
-        image_to_transform = skimage.io.imread(image_path)
+        image_to_transform = cv2.imread(image_path)
 
-        # choose a random transformation to apply for a single image
         key = random.choice(list(available_transformations))
         transformed_image = available_transformations[key](image_to_transform)
 
         # define a name for our new file
-        image_path = image_path.split('/')[-1]
-        new_file_path = '{}_augm_{}.png'.format(
-            image_path.split('.')[0], i)
-        transformed_image = (transformed_image*255).astype(np.uint8)
-        #import pdb; pdb.set_trace()
-        imageio.imwrite(
-            os.path.join(folder_path, new_file_path), transformed_image)
-        # write image to the disk
-        # sk.io.imsave(new_file_path, transformed_image)
+        dir_name = os.path.dirname(image_path)
+        image_name = os.path.basename(image_path).split('.')[0]
+        new_file_path = os.path.join(dir_name, image_name+'_aug_'+str(i)+'.png')
+        # transformed_image = (transformed_image*255).astype(np.uint8)
+        cv2.imwrite(new_file_path, transformed_image)
+    print('data augmentation completed. added {} images'.format(num_files_desired))
 
 
-def check_data(
-        processed_data, processed_dirs, val_file_names, test_file_names):
+def check_data(processed_data, processed_dirs, val_file_names, test_file_names):
     '''
     Print percentage images in train, val and test.
     '''
@@ -97,3 +104,7 @@ def check_data(
     print('Number of validation images:', len(
         val_file_names), '= %.0f' % percVal, '%')
     print('Number of test images:', len(test_file_names), '= %.0f' % percTest, '%')
+
+
+if __name__ == "__main__":
+    augmentation_on_train()

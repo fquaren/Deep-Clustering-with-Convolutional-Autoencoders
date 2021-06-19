@@ -5,8 +5,7 @@ from glob import glob
 
 
 def get_list_per_type(path, scan):
-    #images = [os.path.join(path, f) for f in os.listdir(path) if f.endswith('.png')]
-    images = glob(os.path.join(path, '**', '*.png'))
+    images = glob(os.path.join(path, '*.png'))
     images = [f for f in images if scan in f]
     return images
 
@@ -26,10 +25,9 @@ def pred_cae(net, weights, directory, scans, figures, exp, n):
         autoencoder, encoder = net
         autoencoder.load_weights(weights)
         img = get_image(get_list_per_type(directory, scan), n)
-        img = cv2.resize(
-            img, dsize=(192, 192), interpolation=cv2.INTER_LANCZOS4)
+        img = cv2.resize(img, dsize=(128, 128), interpolation=cv2.INTER_LANCZOS4)
         pred_img = autoencoder.predict(img.reshape((1,) + img.shape + (1,)))
-        pred_img = pred_img.reshape((192, 192))
+        pred_img = pred_img.reshape((128, 128))
         # plot prediction and save image
         plt.figure(figsize=(14, 7))
         plt.subplot(1, 2, 1)
@@ -49,10 +47,9 @@ def pred_dcec(model, weights, directory, scans, figures, exp, n):
     for scan in scans:
         model.load_weights(weights)
         img = get_image(get_list_per_type(directory, scan), n)
-        img = cv2.resize(
-            img, dsize=(192, 192), interpolation=cv2.INTER_LANCZOS4)
-        pred_img = model.predict(img.reshape((1,) + img.shape + (1,)))[1]
-        pred_img = pred_img.reshape((192, 192))
+        img = cv2.resize(img, dsize=(128, 128), interpolation=cv2.INTER_LANCZOS4)
+        pred_img = model.predict(img.reshape((1,) + img.shape + (1,)))
+        pred_img = pred_img[1].reshape((128, 128))
         # plot prediction and save image
         plt.figure(figsize=(14, 7))
         plt.subplot(1, 2, 1)

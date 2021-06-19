@@ -1,7 +1,6 @@
 import os
 import tensorflow as tf
-from keras.optimizers.schedules import PiecewiseConstantDecay
-from keras.initializers import VarianceScaling
+from keras.optimizers.schedules import PiecewiseConstantDecay, ExponentialDecay
 from keras.callbacks import EarlyStopping, ModelCheckpoint
 import nets
 from tensorflow.keras.optimizers import Adam
@@ -27,19 +26,19 @@ tables = '/home/fquaren/unimib/tesi/data/tables'
 figures = '/home/fquaren/unimib/tesi/reports/figures'
 experiments = '/home/fquaren/unimib/tesi/experiments'
 
-exp = 'finding_best_acc'
+exp = 'new_dataset_with_old'
 
 cae_models = os.path.join(models, exp, 'cae')
 cae_weights = os.path.join(models, exp, 'cae', 'cae_weights')
 ce_weights = os.path.join(models, exp, 'cae', 'ce_weights')
 
 # Pretrain CAE settings
-cae = nets.CAE_Conv2DTranspose()
+cae = nets.CAE_Conv2DTranspose_shallow()
 
-pretrain_epochs = 10000
-cae_batch_size = 9
+pretrain_epochs = 5000
+cae_batch_size = 12
 my_callbacks = [
-    EarlyStopping(patience=50, monitor='val_loss'),
+    EarlyStopping(patience=10, monitor='val_loss'),
     ModelCheckpoint(
         filepath=cae_weights,
         save_best_only=True,
@@ -51,19 +50,15 @@ cae_optim = 'adam'
 
 # Train DCEC settings
 n_init_kmeans = 50
-dcec_bs = 12
+dcec_bs = 64
 maxiter = 3000
-update_interval = 40
+update_interval = 100
 save_interval = update_interval
-tol = 0.01
-gamma = 0.01
+tol = 0.001
+gamma = 0.001
 index = 0
 
-step = tf.Variable(0, trainable=False)
-boundaries = [600, 1000]
-values = [1e-6, 5e-7, 1e-7]
-learning_rate_fn = PiecewiseConstantDecay(
-    boundaries, values)
+learning_rate_fn = ExponentialDecay(initial_learning_rate=0.001, decay_steps=500, decay_rate=0.96)
 dcec_optim = Adam(learning_rate=learning_rate_fn)
 
 # Pandas dataframe
