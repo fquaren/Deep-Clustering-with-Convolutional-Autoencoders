@@ -13,9 +13,12 @@ import config as cfg
 from nets import ClusteringLayer
 from build_and_save_features import load_dataset
 from metrics import acc, nmi, ari
+import nets
+from mpl_toolkits.mplot3d import Axes3D
 
 
-def plot_cae_tnse(autoencoder, encoder, models_directory, figures, dataset):
+def plot_cae_kmeans(encoder, ce_weights, figures, dataset, epoch=''): #TODO add legend
+
     """
     parameters:
     - autoencoder,
@@ -27,16 +30,24 @@ def plot_cae_tnse(autoencoder, encoder, models_directory, figures, dataset):
     Loads the model weigths from models directory, predicts model output,
     perfoms kmeans and tsne and plots result.
     """
-    autoencoder.load_weights(os.path.join(models_directory, 'cae_weights'))
-    kmeans = KMeans(n_clusters=cfg.n_clusters, n_init=50)
+    encoder.load_weights(ce_weights)
+    kmeans = KMeans(n_clusters=cfg.n_clusters, n_init=10)
     features = encoder.predict(dataset)
     y_pred = kmeans.fit_predict(features)
+    centers3d = kmeans.cluster_centers_.astype(np.float32)
+    fig = plt.figure()
+    ax = Axes3D(fig)
+    ax.scatter(features[:, 0], features[:, 1], features[:, 2], c=y_pred, cmap='brg')
+    ax.scatter(centers3d[0], centers3d[1], centers3d[2], c='black')
+    plt.savefig(os.path.join(figures, 'kmeans_ae_'+epoch))
+    fig = plt.figure()
     tsne = TSNE(n_components=2, perplexity=50)
     embedding = tsne.fit_transform(features)
-    plt.figure()
+    centers2d = tsne.fit_transform(centers3d)
     plt.scatter(embedding[:, 0], embedding[:, 1], c=y_pred, s=20, cmap='brg')
-    plt.savefig(os.path.join(figures, 'tsne_cae'))
-    print('saved scatter plot cae')
+    #plt.scatter(centers2d[0], centers2d[1], c='black')
+    plt.savefig(os.path.join(figures, 'tsne_ae_'+epoch))
+    print('saved scatter plot ae')
 
 
 def plot_pretrain_metrics(file, save_dir):
@@ -211,55 +222,64 @@ def plot_confusion_matrix(y_true, y_pred, save_dir):
 
 
 if __name__ == "__main__":
+    x_train, y_train = load_dataset('x_train.npy', 'y_train.npy')
     x_test, y_test = load_dataset('x_test.npy', 'y_test.npy')
 
-    cae, encoder = cfg.cae
-    clustering_layer = ClusteringLayer(
-        cfg.n_clusters, name='clustering')(encoder.output)
-    model = Model(
-        inputs=encoder.input, outputs=[clustering_layer, cae.output])
-    model.compile(
-        loss=['kld', 'mse'], loss_weights=[cfg.gamma, 1], optimizer='adam')
+    autoencoder, encoder = nets.autoencoder(x_test)
 
-    os.makedirs(os.path.join(cfg.figures, cfg.exp, 'cae'), exist_ok=True)
-    os.makedirs(os.path.join(cfg.figures, cfg.exp, 'dcec'), exist_ok=True)
-    # --- CAE ---
-    # plot tsne after kmean init
-    plot_cae_tnse(
-        autoencoder=cae,
-        encoder=encoder,
-        models_directory=os.path.join(cfg.models, cfg.exp, 'cae'),
-        figures=os.path.join(cfg.figures, cfg.exp, 'cae'),
-        dataset=x_test
+    plot_cae_kmeans( 
+        encoder, 
+        cfg.ce_weights, 
+        os.path.join(cfg.figures, cfg.exp, 'cae'), 
+        x_test
     )
+    
+    # clustering_layer = ClusteringLayer(
+    #     cfg.n_clusters, name='clustering')(encoder.output)
+    # model = Model(
+    #     inputs=encoder.input, outputs=[clustering_layer, cae.output])
+    # model.compile(
+    #     loss=['kld', 'mse'], loss_weights=[cfg.gamma, 1], optimizer='adam')
 
-    # plot pretrain metrics
-    plot_pretrain_metrics(
-        file=os.path.join(cfg.tables, 'cae_train_metrics.csv'),
-        save_dir=os.path.join(cfg.figures, cfg.exp, 'cae'),
-    )
+    # os.makedirs(os.path.join(cfg.figures, cfg.exp, 'cae'), exist_ok=True)
+    # os.makedirs(os.path.join(cfg.figures, cfg.exp, 'dcec'), exist_ok=True)
+    # # --- CAE ---
+    # # plot tsne after kmean init
+    # plot_cae_tnse(
+    #     autoencoder=cae,
+    #     encoder=encoder,
+    #     models_directory=os.path.join(cfg.models, cfg.exp, 'cae'),
+    #     figures=os.path.join(cfg.figures, cfg.exp, 'cae'),
+    #     dataset=x_test
+    # )
 
-    # --- DCEC ---
-    # plot tsne dcec iterations during training
-    plot_dcec_tsne(
-        model=model,
-        models_directory=os.path.join(cfg.models, cfg.exp, 'dcec'),
-        figures=os.path.join(cfg.figures, cfg.exp, 'dcec'),
-        dataset=x_test
-    )
+    # # plot pretrain metrics
+    # plot_pretrain_metrics(
+    #     file=os.path.join(cfg.tables, 'cae_train_metrics.csv'),
+    #     save_dir=os.path.join(cfg.figures, cfg.exp, 'cae'),
+    # )
 
-    # plot train metrics
-    plot_train_metrics(
-        file=os.path.join(cfg.tables, cfg.exp, 'dcec_train_metrics.csv'),
-        save_dir=os.path.join(cfg.figures, cfg.exp, 'dcec')
-    )
+    # # --- DCEC ---
+    # # plot tsne dcec iterations during training
+    # plot_dcec_tsne(
+    #     model=model,
+    #     models_directory=os.path.join(cfg.models, cfg.exp, 'dcec'),
+    #     figures=os.path.join(cfg.figures, cfg.exp, 'dcec'),
+    #     dataset=x_test
+    # )
 
-    metrics, y_pred = test_dcec(model, x_test, y_test)
-    plot_confusion_matrix(
-        y_true=y_test,
-        y_pred=y_pred,
-        save_dir=os.path.join(cfg.figures, cfg.exp, 'dcec')
-    )
-    print('final metrics:', metrics)
+    # # plot train metrics
+    # plot_train_metrics(
+    #     file=os.path.join(cfg.tables, cfg.exp, 'dcec_train_metrics.csv'),
+    #     save_dir=os.path.join(cfg.figures, cfg.exp, 'dcec')
+    # )
+
+    # metrics, y_pred = test_dcec(model, x_test, y_test)
+    # plot_confusion_matrix(
+    #     y_true=y_test,
+    #     y_pred=y_pred,
+    #     save_dir=os.path.join(cfg.figures, cfg.exp, 'dcec')
+    # )
+    # print('final metrics:', metrics)
 
 # TODO https://machinelearningmastery.com/how-to-visualize-filters-and-feature-maps-in-convolutional-neural-networks/

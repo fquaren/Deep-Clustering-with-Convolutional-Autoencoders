@@ -107,9 +107,9 @@ def read_images(path):
         img = cv2.resize(img, dsize=(128, 128), interpolation=cv2.INTER_LANCZOS4)
         images.append(img)
     y = np.concatenate((labels,))
-    x = np.dstack(images)
+    x = np.stack(images)
     x = np.rollaxis(x, -1)
-    x = x/255.
+    # x = x/255.
     return x, y
 
 
@@ -121,13 +121,14 @@ def create_tensors(path):
     X = []
     Y = []
 
-    images = glob.glob(path+'/**.png')
+    images = glob.glob(path+'/**/**.png')
     X, Y = read_images(images)  # normalization done at the train directory level
     X = np.dstack(X)
-    X = np.rollaxis(X, -1)
-    X -= np.mean(X)  # mean subtraction
+    X = X.reshape([X.shape[0], -1]) / 255.  
+    # X = np.rollaxis(X, -1)
+    # X -= np.mean(X)  # mean subtraction
     # X /= np.std(X, axis = 0)  # normalization
-    X = X.reshape(X.shape + (1,))
+    # X = X.reshape(X.shape + (1,))
     random.shuffle(X)
     random.shuffle(Y)
     return X, Y

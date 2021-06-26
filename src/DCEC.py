@@ -6,28 +6,57 @@ import pandas as pd
 import config as cfg
 from metrics import target_distribution, nmi, ari, acc
 from predict import pred_dcec
-from CAE import init_kmeans
+from CAE import init_kmeans, pretrain
 from build_and_save_features import load_dataset
+import nets
 
+
+class ASPC(object):
+    def __init__(self) -> None:
+        super().__init__()
+        self.autoencoder, self.encoder = nets.autoencoder()
+        self.model = self.autoencoder
+        self.pretrained = True
+
+    def fit(
+        ae_weights,
+    ):
+        # pretraining
+        if ae_weights is None:
+            print('pretraining AE...')
+            pretrain(
+                autoencoder=autoencoder,
+                encoder=encoder,
+                x_train=x_train,
+                train_generator=train_generator,
+                x_val=x_val,
+                val_generator=val_generator,
+                batch_size=cfg.cae_batch_size,
+                pretrain_epochs=cfg.pretrain_epochs,
+                my_callbacks=cfg.my_callbacks,
+                cae_models=cfg.cae_models,
+                optim=cfg.cae_optim
+            )
+        pass
 
 def train_val_DCEC(
-        maxiter,
-        update_interval,
-        save_interval,
-        x_train,
-        y_train,
-        x_val,
-        y_val,
-        y_pred_last,
-        model,
-        tol,
-        index,
-        dcec_bs,
-        dictionary,
-        path_models_dcec,
-        tables,
-        exp
-            ):
+    maxiter,
+    update_interval,
+    save_interval,
+    x_train,
+    y_train,
+    x_val,
+    y_val,
+    y_pred_last,
+    model,
+    tol,
+    index,
+    dcec_bs,
+    dictionary,
+    path_models_dcec,
+    tables,
+    exp
+):
 
     # Init loss
     train_loss = [0, 0, 0]
@@ -144,7 +173,7 @@ def main():
     x_val, y_val = load_dataset('x_val.npy', 'y_val.npy')
     x_test, y_test = load_dataset('x_test.npy', 'y_test.npy')
 
-    model, y_pred_last, metrics = init_kmeans(
+    y_pred_last, metrics, centers = init_kmeans(
         cae=cfg.cae,
         n_clusters=cfg.n_clusters,
         ce_weights=cfg.ce_weights,
@@ -152,18 +181,6 @@ def main():
         x=x_train,
         y=y_train,
     )
-    
-    count = 0
-    while metrics['acc'] < 0.5 and count < 100:
-        model, y_pred_last, metrics = init_kmeans(
-            cae=cfg.cae,
-            n_clusters=cfg.n_clusters,
-            ce_weights=cfg.ce_weights,
-            n_init_kmeans=cfg.n_init_kmeans,
-            x=x_train,
-            y=y_train,
-        )
-        count += 1
 
     train_val_DCEC(
         exp=cfg.exp,

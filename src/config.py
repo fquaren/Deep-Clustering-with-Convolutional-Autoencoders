@@ -26,30 +26,30 @@ tables = '/home/fquaren/unimib/tesi/data/tables'
 figures = '/home/fquaren/unimib/tesi/reports/figures'
 experiments = '/home/fquaren/unimib/tesi/experiments'
 
-exp = 'new_dataset_with_old'
+exp = 'aspc_26_Dense/'
 
-cae_models = os.path.join(models, exp, 'cae')
-cae_weights = os.path.join(models, exp, 'cae', 'cae_weights')
-ce_weights = os.path.join(models, exp, 'cae', 'ce_weights')
+ae_models = os.path.join(models, exp, 'ae')
+ae_weights = os.path.join(models, exp, 'ae', 'ae_weights')
+ce_weights = os.path.join(models, exp, 'ae', 'ce_weights')
 
-# Pretrain CAE settings
-cae = nets.CAE_Conv2DTranspose_shallow()
+# Pretrain ae settings
 
-pretrain_epochs = 5000
-cae_batch_size = 12
+
+pretrain_epochs = 10000
+ae_batch_size = 16
 my_callbacks = [
-    EarlyStopping(patience=10, monitor='val_loss'),
+    EarlyStopping(patience=100, monitor='val_loss'),
     ModelCheckpoint(
-        filepath=cae_weights,
+        filepath=ae_weights,
         save_best_only=True,
         save_weights_only=True,
         monitor='val_loss'
     )
 ]
-cae_optim = 'adam'
+ae_optim = 'adam'
 
 # Train DCEC settings
-n_init_kmeans = 50
+n_init_kmeans = 100
 dcec_bs = 64
 maxiter = 3000
 update_interval = 100
@@ -59,7 +59,7 @@ gamma = 0.001
 index = 0
 
 learning_rate_fn = ExponentialDecay(initial_learning_rate=0.001, decay_steps=500, decay_rate=0.96)
-dcec_optim = Adam(learning_rate=learning_rate_fn)
+finetune_optim = Adam(learning_rate=learning_rate_fn)
 
 # Pandas dataframe
 d = {
@@ -78,7 +78,7 @@ d = {
     'val_ari': []
 }
 
-d_cae = {
+d_ae = {
     'train_loss': [],
     'val_loss': []
 }

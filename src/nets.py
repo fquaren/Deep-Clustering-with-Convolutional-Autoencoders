@@ -1,30 +1,71 @@
-from keras.layers import Input, Dense, Conv2D, Flatten, Reshape, Conv2DTranspose, BatchNormalization, Concatenate
+from keras.layers import Dropout, Input, Dense, Conv2D, Flatten, Reshape, Conv2DTranspose, BatchNormalization, Concatenate, MaxPooling2D, UpSampling2D
 from keras.models import Model
 from keras import backend as K
 from keras.engine.topology import InputSpec, Layer
-from tensorflow.keras import initializers
+from tensorflow.keras.initializers import VarianceScaling
+import tensorflow as tf
+K.set_image_data_format('channels_last')
+
+# def autoencoder(input_shape=(128, 128, 1), act='relu'):
+    
+#     dims=[128*128, 300, 3]
+#     n_stacks = len(dims) - 1
+
+#     init = VarianceScaling(scale=1. / 3., mode='fan_in', distribution='uniform')
+    
+#     input_img = Input(shape=input_shape, name='input')
+
+#     h = Reshape((128*128,))(input_img)
+#     # Encoder
+#     for i in range(n_stacks-1):
+#         h = Dense(dims[i + 1], activation=act, kernel_initializer=init, name='encoder_%d' % i)(h)
+
+#     # hidden layer
+#     h = Dense(dims[-1], kernel_initializer=init, name='encoder_%d' % (n_stacks - 1))(h)
+#     print(h.shape)
+
+#     y = h
+#     # internal layers in decoder
+#     for i in range(n_stacks-1, 0, -1):
+#         y = Dense(dims[i], activation=act, kernel_initializer=init, name='decoder_%d' % i)(y)
+
+#     # output
+#     y = Dense(dims[0], kernel_initializer=init, name='decoder_0')(y)
+#     y = Reshape((128, 128, 1))(y)
 
 
-def CAE_Conv2DTranspose_shallow(input_shape=(128, 128, 1), filters=[8, 16, 32, 64, 300]):
+#     return Model(inputs=input_img, outputs=y, name='AE'), Model(inputs=input_img, outputs=h, name='encoder')
+
+
+def autoencoder(input_shape=(128, 128, 1), filters=[32, 64, 128, 300]):
 
     input_img = Input(shape=input_shape)
+    init = VarianceScaling(scale=1. / 3., mode='fan_in', distribution='uniform')
 
     # Encoder
-    x = Conv2D(filters[0], 6, strides=4, padding='same', activation='relu', name='conv1', input_shape=input_shape)(input_img)
-    x = Conv2D(filters[1], 6, strides=4, padding='same', activation='relu', name='conv2')(x)
+    x = Conv2D(filters[0], 3, strides=2, padding='same', activation='relu', name='conv1', input_shape=input_shape, kernel_initializer=init)(input_img)
+    x = Conv2D(filters[1], 3, strides=2, padding='same', activation='relu', name='conv2', kernel_initializer=init)(x)
     
     x = Flatten(name='flatten_1')(x)
-
+    
     encoded = Dense(units=filters[-1], activation='relu', name='encoded')(x)
     y = Dense(units=3, activation='relu', name='output', kernel_initializer='glorot_uniform')(encoded)
 
     # Decoder
-    x = Dense(units=8*8*filters[1], activation='relu')(encoded)
-    x = Reshape((8, 8, filters[1]))(x)
-    x = Conv2DTranspose(filters[0], 6, strides=4, padding='same', activation='relu', name='deconv2')(x)
-    decoded = Conv2DTranspose(1, 6, strides=4, padding='same', name='deconv1')(x)
+    x = Dense(units=32*32*filters[1], activation='relu')(encoded)
+    x = Reshape((32, 32, filters[1]))(x)
+    x = Conv2DTranspose(filters[0], 3, strides=2, padding='same', activation='relu', name='deconv2')(x)
+    decoded = Conv2DTranspose(1, 3, strides=2, padding='same', name='deconv1')(x)
 
     return Model(inputs=input_img, outputs=decoded, name='CAE'), Model(inputs=input_img, outputs=y, name='CE')
+
+
+
+
+
+
+
+
 
 
 def CAE_Conv2DTranspose(input_shape=(128, 128, 1), filters=[16, 32, 64, 128, 256, 3]):

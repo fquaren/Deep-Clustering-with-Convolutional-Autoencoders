@@ -2,40 +2,45 @@ import os
 from matplotlib import pyplot as plt
 import cv2
 from glob import glob
+import numpy as np
 
 
 def get_list_per_type(path, scan):
-    images = glob(os.path.join(path, '*.png'))
-    images = [f for f in images if scan in f]
+    images = glob(os.path.join(path, scan, '*.png'))
     return images
 
 
 def get_image(names, n):
     image = cv2.imread(names[n])
     image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    image = cv2.resize(image, dsize=(128, 128))
     return image
 
 
-def pred_cae(net, weights, directory, scans, figures, exp, n):
+def pred_ae(net, weights, directory, scans, figures, exp, n):
     '''
     Predict the output of the net from a test image and save the prediction
     (one for each scan).
     '''
     for scan in scans:
-        autoencoder, encoder = net
-        autoencoder.load_weights(weights)
-        img = get_image(get_list_per_type(directory, scan), n)
-        img = cv2.resize(img, dsize=(128, 128), interpolation=cv2.INTER_LANCZOS4)
-        pred_img = autoencoder.predict(img.reshape((1,) + img.shape + (1,)))
-        pred_img = pred_img.reshape((128, 128))
+        net.load_weights(weights)
+        img_1 = get_image(get_list_per_type(directory, scan), n)
+        img_2 = get_image(get_list_per_type(directory, scan), n-1)
+        images = [img_1, img_2]
+        img = np.stack(images)
+        #img = np.rollaxis(img, -1)
+        # import pdb; pdb.set_trace()
+        
+        pred_img = net.predict(img)
+
         # plot prediction and save image
         plt.figure(figsize=(14, 7))
         plt.subplot(1, 2, 1)
-        plt.imshow(img)
+        plt.imshow(img[0])
         plt.subplot(1, 2, 2)
-        plt.imshow(pred_img)
-        os.makedirs(os.path.join(figures, exp, 'cae'), exist_ok=True)
-        plt.savefig(os.path.join(figures, exp, 'cae', scan+'_cae_pred.png'))
+        plt.imshow(pred_img[0])
+        os.makedirs(os.path.join(figures, exp, 'ae'), exist_ok=True)
+        plt.savefig(os.path.join(figures, exp, 'ae', scan+'_ae_pred.png'))
     print('Prediction on test images done.')
 
 
