@@ -26,19 +26,17 @@ tables = '/home/fquaren/unimib/tesi/data/tables'
 figures = '/home/fquaren/unimib/tesi/reports/figures'
 experiments = '/home/fquaren/unimib/tesi/experiments'
 
-exp = 'aspc_26_Dense/'
+exp = 'aspc_29_CAE/'
 
 ae_models = os.path.join(models, exp, 'ae')
 ae_weights = os.path.join(models, exp, 'ae', 'ae_weights')
 ce_weights = os.path.join(models, exp, 'ae', 'ce_weights')
 
 # Pretrain ae settings
-
-
 pretrain_epochs = 10000
 ae_batch_size = 16
 my_callbacks = [
-    EarlyStopping(patience=100, monitor='val_loss'),
+    EarlyStopping(patience=50, monitor='val_loss'),
     ModelCheckpoint(
         filepath=ae_weights,
         save_best_only=True,
@@ -54,12 +52,11 @@ dcec_bs = 64
 maxiter = 3000
 update_interval = 100
 save_interval = update_interval
-tol = 0.001
 gamma = 0.001
 index = 0
 
-learning_rate_fn = ExponentialDecay(initial_learning_rate=0.001, decay_steps=500, decay_rate=0.96)
-finetune_optim = Adam(learning_rate=learning_rate_fn)
+learning_rate_fn = ExponentialDecay(initial_learning_rate=0.0001, decay_steps=500, decay_rate=0.96)
+finetune_optim = Adam(learning_rate=1e-4)
 
 # Pandas dataframe
 d = {
@@ -74,8 +71,6 @@ d = {
     'val_acc': [],
     'train_nmi': [],
     'val_nmi': [],
-    'train_ari': [],
-    'val_ari': []
 }
 
 d_ae = {

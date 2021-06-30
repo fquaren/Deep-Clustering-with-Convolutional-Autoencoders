@@ -15,9 +15,10 @@ from build_and_save_features import load_dataset
 from metrics import acc, nmi, ari
 import nets
 from mpl_toolkits.mplot3d import Axes3D
+import umap
 
 
-def plot_cae_kmeans(encoder, ce_weights, figures, dataset, epoch=''): #TODO add legend
+def plot_ae_tsne(encoder, ce_weights, figures, dataset, epoch=''): #TODO add legend
 
     """
     parameters:
@@ -35,18 +36,43 @@ def plot_cae_kmeans(encoder, ce_weights, figures, dataset, epoch=''): #TODO add 
     features = encoder.predict(dataset)
     y_pred = kmeans.fit_predict(features)
     centers3d = kmeans.cluster_centers_.astype(np.float32)
+    # fig = plt.figure()
+    # ax = Axes3D(fig)
+    # ax.scatter(features[:, 0], features[:, 1], features[:, 2], c=y_pred, cmap='brg')
+    # ax.scatter(centers3d[0], centers3d[1], centers3d[2], c='black')
+    # plt.savefig(os.path.join(figures, 'kmeans_ae_' + epoch))
     fig = plt.figure()
-    ax = Axes3D(fig)
-    ax.scatter(features[:, 0], features[:, 1], features[:, 2], c=y_pred, cmap='brg')
-    ax.scatter(centers3d[0], centers3d[1], centers3d[2], c='black')
-    plt.savefig(os.path.join(figures, 'kmeans_ae_'+epoch))
-    fig = plt.figure()
-    tsne = TSNE(n_components=2, perplexity=50)
+    tsne = TSNE(n_components=2, n_iter=5000, perplexity=50)
     embedding = tsne.fit_transform(features)
-    centers2d = tsne.fit_transform(centers3d)
+    #centers2d = tsne.fit_transform(centers3d)
     plt.scatter(embedding[:, 0], embedding[:, 1], c=y_pred, s=20, cmap='brg')
     #plt.scatter(centers2d[0], centers2d[1], c='black')
-    plt.savefig(os.path.join(figures, 'tsne_ae_'+epoch))
+    plt.savefig(os.path.join(figures, 'tsne_encoder_' + epoch))
+    print('saved scatter plot ae')
+
+
+def plot_ae_umap(encoder, ce_weights, figures, dataset, epoch=''):
+    """
+    parameters:
+    - autoencoder,
+    - encoder,
+    - models_directory: directory containing the models,
+    - figures: directory to save the plots
+    - dataset: dataset on which to predict (train, val, test)
+
+    Loads the model weigths from models directory, predicts model output,
+    perfoms kmeans and tsne and plots result.
+    """
+    encoder.load_weights(ce_weights)
+    kmeans = KMeans(n_clusters=cfg.n_clusters)
+    features,  = encoder.predict(dataset)
+    y_pred = kmeans.fit_predict(features)
+    reducer = umap.UMAP()
+    reducer.fit(features)
+    embedding = reducer.transform(features)
+    fig = plt.figure()
+    plt.scatter(embedding[:, 0], embedding[:, 1], c=y_pred, s=20, cmap='brg')
+    plt.savefig(os.path.join(figures, 'umap_encoder_' + epoch))
     print('saved scatter plot ae')
 
 
@@ -227,12 +253,12 @@ if __name__ == "__main__":
 
     autoencoder, encoder = nets.autoencoder(x_test)
 
-    plot_cae_kmeans( 
-        encoder, 
-        cfg.ce_weights, 
-        os.path.join(cfg.figures, cfg.exp, 'cae'), 
-        x_test
-    )
+    # plot_cae_kmeans( 
+    #     encoder, 
+    #     cfg.ce_weights, 
+    #     os.path.join(cfg.figures, cfg.exp, 'cae'), 
+    #     x_test
+    # )
     
     # clustering_layer = ClusteringLayer(
     #     cfg.n_clusters, name='clustering')(encoder.output)
