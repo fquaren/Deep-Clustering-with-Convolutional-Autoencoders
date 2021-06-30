@@ -11,7 +11,7 @@ import random
 from metrics import acc, nmi
 from sklearn.manifold import TSNE
 from sklearn.decomposition import FastICA, PCA
-from sklearn import random_projection
+from sklearn import random_projection, cluster
 import umap
 
 
@@ -103,7 +103,7 @@ def init_kmeans_on_projection(x, y, n_clusters=3, n_init_kmeans=100, verbose=Tru
     print('k-means...')
     encoder.load_weights(weights)
     features, _ = encoder.predict(x)
-    transformer = random_projection.GaussianRandomProjection(n_components=3)
+    transformer = cluster.FeatureAgglomeration(n_clusters=3)
     embedding = transformer.fit_transform(features)
     kmeans = KMeans(n_clusters=n_clusters, n_init=n_init_kmeans)
     y_pred = kmeans.fit_predict(embedding)

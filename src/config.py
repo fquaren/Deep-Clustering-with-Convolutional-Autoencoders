@@ -26,7 +26,7 @@ tables = '/home/fquaren/unimib/tesi/data/tables'
 figures = '/home/fquaren/unimib/tesi/reports/figures'
 experiments = '/home/fquaren/unimib/tesi/experiments'
 
-exp = 'aspc_29_CAE/'
+exp = 'aspc_27_CAE_300/'
 
 ae_models = os.path.join(models, exp, 'ae')
 ae_weights = os.path.join(models, exp, 'ae', 'ae_weights')

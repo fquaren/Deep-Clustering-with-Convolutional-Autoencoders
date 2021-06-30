@@ -42,6 +42,15 @@ def generators(x_train, x_val, batch_size):
 
     return train_generator, val_generator
 
+def lalign(x, y, alpha=2):
+    return (x - y).norm(dim=1).pow(alpha).mean()
+
+def lunif(x, t=2):
+    sq_pdist = torch.pdist(x, p=2).pow(2)
+    return sq_pdist.mul(-t).exp().mean().log()
+    
+loss = lalign(x, y) + lam * (lunif(x) + lunif(y)) / 2
+
 def pretrain(
     autoencoder,
     encoder,

@@ -37,7 +37,7 @@ K.set_image_data_format('channels_last')
 #     return Model(inputs=input_img, outputs=y, name='AE'), Model(inputs=input_img, outputs=h, name='encoder')
 
 
-def autoencoder(input_shape=(128, 128, 1), filters=[32, 64, 3000]):
+def autoencoder(input_shape=(128, 128, 1), filters=[32, 64, 300]):
 
     input_img = Input(shape=input_shape)
     init = VarianceScaling(scale=1. / 3., mode='fan_in', distribution='uniform')
