@@ -1,12 +1,12 @@
 from tensorflow.keras import callbacks
-from predict import pred_ae, init_kmeans, init_kmeans_on_tsne
+from predict import pred_ae, init_kmeans
 import random
 import os
 import config as cfg
 import pandas as pd
 from keras.models import Model
 from sklearn.cluster import KMeans
-from nets import ClusteringLayer, autoencoder
+from nets import autoencoder
 from metrics import nmi, ari, acc
 from build_and_save_features import load_dataset
 import nets
@@ -42,14 +42,6 @@ def generators(x_train, x_val, batch_size):
 
     return train_generator, val_generator
 
-def lalign(x, y, alpha=2):
-    return (x - y).norm(dim=1).pow(alpha).mean()
-
-def lunif(x, t=2):
-    sq_pdist = torch.pdist(x, p=2).pow(2)
-    return sq_pdist.mul(-t).exp().mean().log()
-    
-loss = lalign(x, y) + lam * (lunif(x) + lunif(y)) / 2
 
 def pretrain(
     autoencoder,
@@ -133,38 +125,32 @@ if __name__ == "__main__":
     #     y=y_train,
     # )
 
-    # _, _ = init_kmeans_on_tsne(
-    #     n_clusters=cfg.n_clusters,
-    #     n_init_kmeans=cfg.n_init_kmeans,
-    #     x=x_train,
-    #     y=y_train,
-    # )
 
-    # df = pd.DataFrame(data=cfg.d_ae)
-    # df.to_csv(
-    #     os.path.join(
-    #         cfg.tables,
-    #         cfg.exp,
-    #         'ae_train.csv'
-    #         ), 
-    #     index=False
-    # )
-    # print('metrics saved.')
+    df = pd.DataFrame(data=cfg.d_ae)
+    df.to_csv(
+        os.path.join(
+            cfg.tables,
+            cfg.exp,
+            'ae_train.csv'
+            ), 
+        index=False
+    )
+    print('metrics saved.')
 
-    # viz.plot_pretrain_metrics(
-    #     file=os.path.join(cfg.tables, cfg.exp, 'ae_train.csv'),
-    #     save_dir=os.path.join(cfg.figures, cfg.exp, 'ae'),
-    # )
-    # print('plotted pretrained metrics.')
-
+    viz.plot_pretrain_metrics(
+        file=os.path.join(cfg.tables, cfg.exp, 'ae_train.csv'),
+        save_dir=os.path.join(cfg.figures, cfg.exp, 'ae'),
+    )
+    print('plotted pretrained metrics.')
+    
     viz.plot_ae_tsne(
-        encoder, 
+        nets.encoder(), 
         cfg.ce_weights, 
         os.path.join(cfg.figures, cfg.exp, 'ae'), 
         x_test
     )
     viz.plot_ae_umap(
-        encoder, 
+        nets.encoder(), 
         cfg.ce_weights, 
         os.path.join(cfg.figures, cfg.exp, 'ae'), 
         x_test

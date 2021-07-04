@@ -5,7 +5,7 @@ import random
 import pandas as pd
 import config as cfg
 from metrics import target_distribution, nmi, ari, acc
-from predict import init_kmeans, init_kmeans_on_projection
+from predict import init_kmeans, init_kmeans
 from build_and_save_features import load_dataset, main
 import nets
 from time import time
@@ -83,8 +83,8 @@ class ASPC(object):
     def train(self, x_train, y_train, x_val, y_val, epochs, batch_size):
         # initialization
         t1 = time()
-        self.y_pred, self.centers = init_kmeans_on_projection(x=x_train, y=y_train, verbose=False)
-        self.val_y_pred, self.val_centers = init_kmeans_on_projection(x=x_val, y=y_val, verbose=False)
+        self.y_pred, self.centers = init_kmeans(x=x_train, y=y_train, verbose=False)
+        self.val_y_pred, self.val_centers = init_kmeans(x=x_val, y=y_val, verbose=False)
         t2 = time()
         print('Time for initialization: %.1fs' % (t2 - t1))
 
@@ -135,10 +135,10 @@ class ASPC(object):
         #     callbacks=cfg.my_callbacks
         # )
 
-        for f in self.encoder.layers[:-2]:
-            f.trainable = False
+        # for f in self.encoder.layers[:-2]:
+        #     f.trainable = False
         
-        optim = Adam(learning_rate=1e-5)
+        optim = Adam(learning_rate=1e-4)
         self.encoder.compile(optimizer=optim, loss='mse')
         self.encoder.summary()
 
@@ -222,7 +222,7 @@ if __name__ == "__main__":
     print('Pretrained encoder weights are loaded successfully!')
 
     print('initial metrics on test:')
-    _, _ = init_kmeans_on_projection(x=x_test, y=y_test)    
+    _, _ = init_kmeans(x=x_test, y=y_test)    
 
     print('TRAINING')
     model.train(x_train=x_train, y_train=y_train, x_val=x_val, y_val=y_val, batch_size=16, epochs=1000)

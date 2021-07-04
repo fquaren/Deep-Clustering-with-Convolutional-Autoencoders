@@ -78,12 +78,12 @@ def pred_dcec(model, weights, directory, scans, figures, exp, n):
 
 def init_kmeans(x, y, n_clusters=3, n_init_kmeans=100, verbose=True, weights=cfg.ce_weights):
 
-    _, encoder = nets.autoencoder()
+    encoder = nets.encoder()
 
     print('k-means...')
     encoder.load_weights(weights)
     kmeans = KMeans(n_clusters=n_clusters, n_init=n_init_kmeans)
-    _, embedding = encoder.predict(x)
+    embedding = encoder.predict(x)
     y_pred = kmeans.fit_predict(embedding)
     centers = kmeans.cluster_centers_
     if verbose:

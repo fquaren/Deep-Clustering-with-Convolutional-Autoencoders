@@ -10,12 +10,14 @@ import seaborn as sns
 from tqdm import tqdm
 import pandas as pd
 import config as cfg
-from nets import ClusteringLayer
 from build_and_save_features import load_dataset
 from metrics import acc, nmi, ari
 import nets
 from mpl_toolkits.mplot3d import Axes3D
 import umap
+import predict
+import random
+import math
 
 
 def plot_ae_tsne(encoder, ce_weights, figures, dataset, epoch=''): #TODO add legend
@@ -32,17 +34,17 @@ def plot_ae_tsne(encoder, ce_weights, figures, dataset, epoch=''): #TODO add leg
     perfoms kmeans and tsne and plots result.
     """
     encoder.load_weights(ce_weights)
-    kmeans = KMeans(n_clusters=cfg.n_clusters, n_init=10)
+    kmeans = KMeans(n_clusters=cfg.n_clusters)
     features = encoder.predict(dataset)
     y_pred = kmeans.fit_predict(features)
-    centers3d = kmeans.cluster_centers_.astype(np.float32)
+    # centers3d = kmeans.cluster_centers_.astype(np.float32)
     # fig = plt.figure()
     # ax = Axes3D(fig)
     # ax.scatter(features[:, 0], features[:, 1], features[:, 2], c=y_pred, cmap='brg')
     # ax.scatter(centers3d[0], centers3d[1], centers3d[2], c='black')
     # plt.savefig(os.path.join(figures, 'kmeans_ae_' + epoch))
     fig = plt.figure()
-    tsne = TSNE(n_components=2, n_iter=5000, perplexity=50)
+    tsne = TSNE(n_components=2)
     embedding = tsne.fit_transform(features)
     #centers2d = tsne.fit_transform(centers3d)
     plt.scatter(embedding[:, 0], embedding[:, 1], c=y_pred, s=20, cmap='brg')
@@ -65,7 +67,7 @@ def plot_ae_umap(encoder, ce_weights, figures, dataset, epoch=''):
     """
     encoder.load_weights(ce_weights)
     kmeans = KMeans(n_clusters=cfg.n_clusters)
-    features,  = encoder.predict(dataset)
+    features = encoder.predict(dataset)
     y_pred = kmeans.fit_predict(features)
     reducer = umap.UMAP()
     reducer.fit(features)
@@ -247,11 +249,81 @@ def plot_confusion_matrix(y_true, y_pred, save_dir):
     print(np.array([a, b]))
 
 
+def plot_dataset():
+    imgs = []
+    for i in range(40):
+        for scan in cfg.scans:
+            n = random.randint(0, 50)
+            imgs.append(predict.get_image(predict.get_list_per_type(cfg.train_directory, scan), n))
+    random.shuffle(imgs)
+    
+    fig = plt.figure(frameon=False, figsize=(100,100))
+    
+    k = 10
+    columns = k
+    rows = k
+    ax = []
+    for i in range(1, columns*rows +1):
+        img = imgs[i]
+        ax.append(fig.add_subplot(rows, columns, i))        
+        plt.imshow(img)
+        plt.axis('off')
+    
+    plt.subplots_adjust(wspace=0.1, hspace=0, left=0, right=1, bottom=0, top=1)
+
+    os.makedirs(os.path.join(cfg.figures, 'dataset'), exist_ok=True)
+    plt.savefig(os.path.join(cfg.figures, 'dataset', 'scans.svg'))
+
+
+def feature_map(scan, layer, depth, exp):
+    # load image
+    # load network aspc_29_CAE
+    encoder = nets.encoder()
+    encoder.load_weights(os.path.join(cfg.models, exp, 'ae', 'ce_weights'))
+    model = Model(inputs=encoder.inputs, outputs=encoder.layers[layer].output)
+    img = predict.get_image(predict.get_list_per_type(cfg.train_directory, scan), 1)
+    img = np.expand_dims(img, axis=-1)
+    img = np.expand_dims(img, axis=0)
+    feature_maps = model.predict(img)
+
+    fig = plt.figure(frameon=False, figsize=(30,30))
+
+    # plot all
+    square = math.sqrt(depth)
+    if isinstance(square, float):
+        square = int(square + 1)
+    ix = 1
+    for _ in range(square):
+        for _ in range(square):
+            # specify subplot and turn of axis
+            ax = plt.subplot(square, square, ix)
+            # plot filter channel in grayscale
+            try:
+                plt.imshow(feature_maps[0, :, :, ix-1])
+            except:
+                plt.imshow(np.zeros((feature_maps.shape[1], feature_maps.shape[1]), dtype=np.uint8))
+            plt.axis('off')
+            ix += 1
+        plt.subplots_adjust(wspace=0.1, hspace=0, left=0, right=1, bottom=0, top=1)
+    # show the figure
+    
+    os.makedirs(os.path.join(cfg.figures, cfg.exp, 'feature_maps'), exist_ok=True)
+    plt.savefig(os.path.join(cfg.figures, cfg.exp, 'feature_maps', 'conv_layer_' + scan + '_' + str(layer) + '.png'))
+
+
+
 if __name__ == "__main__":
     x_train, y_train = load_dataset('x_train.npy', 'y_train.npy')
     x_test, y_test = load_dataset('x_test.npy', 'y_test.npy')
 
-    autoencoder, encoder = nets.autoencoder(x_test)
+    # feature_map(scan=cfg.scans[0], exp='aspc_29_CAE', layer=1, depth=32)
+    # feature_map(scan=cfg.scans[1], exp='aspc_29_CAE', layer=1, depth=32)
+    # feature_map(scan=cfg.scans[2], exp='aspc_29_CAE', layer=1, depth=32)
+    # feature_map(scan=cfg.scans[0], exp='aspc_29_CAE', layer=2, depth=64)
+    # feature_map(scan=cfg.scans[1], exp='aspc_29_CAE', layer=2, depth=64)
+    # feature_map(scan=cfg.scans[2], exp='aspc_29_CAE', layer=2, depth=64)
+
+    # autoencoder, encoder = nets.autoencoder(x_test)
 
     # plot_cae_kmeans( 
     #     encoder, 
