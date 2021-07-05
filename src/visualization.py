@@ -45,7 +45,7 @@ def plot_ae_tsne(encoder, ce_weights, figures, dataset, epoch=''):
     # ax.scatter(centers3d[0], centers3d[1], centers3d[2], c='black')
     # plt.savefig(os.path.join(figures, 'kmeans_ae_' + epoch))
     plt.figure()
-    tsne = TSNE(n_components=2)#, perplexity=30, n_iter=5000)
+    tsne = TSNE(n_components=2, perplexity=30, n_iter=5000)
     embedding = tsne.fit_transform(features)
     # centers2d = tsne.fit_transform(centers3d)
     plt.scatter(embedding[:, 0], embedding[:, 1], c=y_pred, s=20, cmap='brg')

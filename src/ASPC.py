@@ -2,14 +2,15 @@ import os
 import numpy as np
 import config as cfg
 import metrics
-from predict import init_kmeans, init_kmeans_on_projection
+from predict import init_kmeans, pred_ae
 from build_and_save_features import load_dataset
 import nets
-from time import time
 import math
-from generators import generator, MyImageGenerator
+from generators import generator, MyImageGenerator, generators
 from tensorflow.keras.optimizers import Adam
 import visualization as viz
+import pandas as pd
+from keras.callbacks import ModelCheckpoint
 
 
 class ASPC(object):
@@ -19,31 +20,58 @@ class ASPC(object):
         self.y_pred = []
         self.centers = []
 
-    # def pretrain(
-    #     self, autoencoder, encoder, x_train, train_generator, x_val,
-    #     val_generator, batch_size, pretrain_epochs, my_callbacks,
-    #     ae_models, optim
-    # ):
-    #     print('pretraining...')
-    #     encoder.summary()
-    #     autoencoder.summary()
-    #     autoencoder.compile(optimizer=optim, loss='mse')
-    #     t0 = time()
-    #     autoencoder.fit(
-    #         train_generator,
-    #         steps_per_epoch=math.ceil(x_train.shape[0] / batch_size),
-    #         epochs=pretrain_epochs,
-    #         validation_data=val_generator,
-    #         validation_steps=math.ceil(x_val.shape[0] / batch_size),
-    #         callbacks=my_callbacks
-    #     )
-    #     print('pretraining time: ', time() - t0)
-    #     autoencoder.save_weights(os.path.join(ae_models, 'ae_weights'))
-    #     encoder.save_weights(os.path.join(ae_models, 'ce_weights'))
-    #     # save plot metrics
-    #     cfg.d_ae['train_loss'] = autoencoder.history.history['loss']
-    #     cfg.d_ae['val_loss'] = autoencoder.history.history['val_loss']
-    #     print('weigths and metrics saved.')
+    def pretrain(
+        self,
+        x_train,
+        x_val,
+        batch_size=cfg.ae_batch_size,
+        pretrain_epochs=cfg.pretrain_epochs,
+        my_callbacks=cfg.my_callbacks,
+        optim='adam',
+    ):
+
+        train_generator, val_generator = generators(
+            x_train,
+            x_val,
+            cfg.ae_batch_size
+        )
+
+        print('pretraining...')
+        self.autoencoder.summary()
+        self.autoencoder.compile(optimizer=optim, loss='mse')
+
+        # train model
+        self.autoencoder.fit(
+            train_generator,
+            steps_per_epoch=math.ceil(x_train.shape[0] / batch_size),
+            epochs=pretrain_epochs,
+            validation_data=val_generator,
+            validation_steps=math.ceil(x_val.shape[0] / batch_size),
+            callbacks=my_callbacks
+        )
+
+        self.autoencoder.save_weights(cfg.ae_weights)
+        self.encoder.save_weights(cfg.ce_weights)
+        # save plot metrics
+        cfg.d_ae['train_loss'] = autoencoder.history.history['loss']
+        cfg.d_ae['val_loss'] = autoencoder.history.history['val_loss']
+
+        df = pd.DataFrame(data=cfg.d_ae)
+        df.to_csv(
+            os.path.join(
+                cfg.tables,
+                cfg.exp,
+                'ae_train.csv'
+            ),
+            index=False
+        )
+        print('weigths and metrics saved.')
+
+        pred_ae(
+            net=self.autoencoder,
+            weights=cfg.ae_weights,
+            directory=cfg.train_directory,
+        )
 
     def update_labels(self, x, centers):
         """ Update cluster labels.
@@ -68,13 +96,15 @@ class ASPC(object):
     def train(self, x_train, y_train, x_val, y_val, epochs, batch_size):
         # initialization
         self.y_pred, self.centers = init_kmeans(
-            x=x_train, y=y_train, verbose=False)
+            x=x_train, y=y_train, verbose=True)
         self.val_y_pred, self.val_centers = init_kmeans(
-            x=x_val, y=y_val, verbose=False)
+            x=x_val, y=y_val, verbose=True)
 
         # generators
         sample_weight = np.ones(shape=x_train.shape[0])
+        sample_weight[self.y_pred == -1] = 0
         val_sample_weight = np.ones(shape=x_val.shape[0])
+        val_sample_weight[self.val_y_pred == -1] = 0
 
         train_datagen = MyImageGenerator(
             rescale=1./225,
@@ -90,14 +120,17 @@ class ASPC(object):
         train_datagen.fit(x_train)
         val_datagen.fit(x_val)
 
-        optim = Adam(learning_rate=1e-6)
+        # for layer in self.encoder.layers[:-2]:
+        #     layer.trainable = False
+
+        optim = Adam(learning_rate=1e-5)
         self.encoder.compile(optimizer=optim, loss='mse')
         self.encoder.summary()
 
         # training
         clustering_loss = 0
         y_pred_last = np.copy(self.y_pred)
-        tol = 0.0001
+        tol = 0.001
 
         # finetuning
         for epoch in range(epochs+1):
@@ -144,13 +177,19 @@ class ASPC(object):
                     shuffle=False
                 ),
                 validation_steps=math.ceil(x_val.shape[0] / batch_size),
+                callbacks=ModelCheckpoint(
+                    filepath=cfg.final_encoder_weights,
+                    save_best_only=True,
+                    save_weights_only=True,
+                    monitor='val_loss'
+                )
             )
             # loss = self.encoder.history.history['loss'][0]
             # val_loss = self.encoder.history.history['val_loss'][0]
 
-            self.encoder.save_weights(os.path.join(
-                cfg.ae_models, 'final_encoder_weights_epoch_'+str(epoch)))
-            # viz.plot_ae_clusters(
+            # self.encoder.save_weights(os.path.join(
+            #     cfg.ae_models, 'final_encoder_weights_epoch_'+str(epoch)))
+            # viz.plot_ae_umap(
             #     self.encoder,
             #     os.path.join(cfg.ae_models, 'final_encoder_weights_epoch_'+str(epoch)),
             #     os.path.join(cfg.figures, cfg.exp),
@@ -189,26 +228,29 @@ if __name__ == "__main__":
 
     method = ASPC()
 
-    method.autoencoder.load_weights(cfg.ae_weights)
-    print('Pretrained encoder weights are loaded successfully!')
+    # method.encoder.load_weights(cfg.ce_weights)
+    # print('pretrained encoder weights are loaded successfully')
 
-    print('TRAINING')
-    method.train(x_train=x_train, y_train=y_train, x_val=x_val,
-                y_val=y_val, batch_size=16, epochs=1000)
+    # print('initial metrics:')
+    # _, _ = init_kmeans(x=x_train, y=y_train, weights=cfg.ce_weights)
+
+    # print('TRAINING')
+    # method.train(x_train=x_train, y_train=y_train, x_val=x_val,
+    #             y_val=y_val, batch_size=16, epochs=1000)
 
     print('final metrics:')
-    _, _ = init_kmeans(x=x_train, y=y_train, weights=os.path.join(
+    _, _ = init_kmeans(x=x_test, y=y_test, weights=os.path.join(
         cfg.ae_models, 'final_encoder_weights'))
 
     viz.plot_ae_tsne(
         encoder,
         os.path.join(cfg.ae_models, 'final_encoder_weights'),
         os.path.join(cfg.figures, cfg.exp),
-        x_train
+        x_test
     )
     viz.plot_ae_umap(
         encoder,
         os.path.join(cfg.ae_models, 'final_encoder_weights'),
         os.path.join(cfg.figures, cfg.exp),
-        x_train
+        x_test
     )

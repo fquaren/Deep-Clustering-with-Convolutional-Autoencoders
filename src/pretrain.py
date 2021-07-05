@@ -43,7 +43,7 @@ def pretrain(
     )
 
     autoencoder.save_weights(cfg.ae_weights)
-    # encoder.save_weights(cfg.ce_weights)
+    encoder.save_weights(cfg.ce_weights)
     # save plot metrics
     cfg.d_ae['train_loss'] = autoencoder.history.history['loss']
     cfg.d_ae['val_loss'] = autoencoder.history.history['val_loss']
@@ -85,17 +85,17 @@ if __name__ == "__main__":
     x_test = x_test.reshape(x_test.shape[0], 128, 128, 1)
 
     # pretrain
-    pretrain(
-        autoencoder=autoencoder,
-        encoder=encoder,
-        x_train=x_train,
-        x_val=x_val,
-    )
+    # pretrain(
+    #     autoencoder=autoencoder,
+    #     encoder=encoder,
+    #     x_train=x_train,
+    #     x_val=x_val,
+    # )
 
-    viz.plot_pretrain_metrics(
-        file=os.path.join(cfg.tables, cfg.exp, 'ae_train.csv'),
-        save_dir=os.path.join(cfg.figures, cfg.exp, 'ae'),
-    )
+    # viz.plot_pretrain_metrics(
+    #     file=os.path.join(cfg.tables, cfg.exp, 'ae_train.csv'),
+    #     save_dir=os.path.join(cfg.figures, cfg.exp, 'ae'),
+    # )
     viz.plot_ae_tsne(
         nets.encoder(),
         cfg.ce_weights,
@@ -110,11 +110,3 @@ if __name__ == "__main__":
     )
     print('plots pretrain done.')
 
-    # eval
-    autoencoder.evaluate(
-        x_test,
-        x_test,
-        batch_size=cfg.ae_batch_size,
-        verbose=True,
-        return_dict=True
-    )
