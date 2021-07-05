@@ -90,12 +90,15 @@ class ASPC(object):
 
         # generators
         sample_weight = np.ones(shape=x_train.shape[0])
-        # define data augmentation configuration
+
         train_datagen = MyImageGenerator(
+            rescale=1./225,
             featurewise_center=True,
             featurewise_std_normalization=True,
         )
+
         val_datagen = MyImageGenerator(
+            rescale=1./225,
             featurewise_center=True,
             featurewise_std_normalization=True,
         )
@@ -121,24 +124,8 @@ class ASPC(object):
 
         # for f in self.encoder.layers[:-2]:
         #     f.trainable = False
-
-        # optim = Adam(learning_rate=1e-4)
-        # self.encoder.compile(optimizer=optim, loss='mse')
-        # self.encoder.summary()
-
-        # self.encoder.fit(
-        #     train_generator,
-        #     steps_per_epoch=math.ceil(x_train.shape[0] / batch_size),
-        #     epochs=2,
-        #     validation_data=val_generator,
-        #     validation_steps=math.ceil(x_val.shape[0] / batch_size),
-        #     callbacks=cfg.my_callbacks
-        # )
-
-        # for f in self.encoder.layers[:-2]:
-        #     f.trainable = False
         
-        optim = Adam(learning_rate=1e-4)
+        optim = Adam(learning_rate=1e-5)
         self.encoder.compile(optimizer=optim, loss='mse')
         self.encoder.summary()
 
@@ -222,13 +209,13 @@ if __name__ == "__main__":
     print('Pretrained encoder weights are loaded successfully!')
 
     print('initial metrics on test:')
-    _, _ = init_kmeans(x=x_test, y=y_test)    
+    _, _ = init_kmeans(x=x_train, y=y_train)    
 
     print('TRAINING')
-    model.train(x_train=x_train, y_train=y_train, x_val=x_val, y_val=y_val, batch_size=16, epochs=1000)
+    model.train(x_train=x_train, y_train=y_train, x_val=x_val, y_val=y_val, batch_size=32, epochs=1000)
 
     print('final metrics:')
-    _, _ = init_kmeans(x=x_test, y=y_test, weights=os.path.join(cfg.ae_models, 'final_encoder_weights'))
+    _, _ = init_kmeans(x=x_train, y=y_train, weights=os.path.join(cfg.ae_models, 'final_encoder_weights'))
 
     viz.plot_ae_tsne(
         encoder,

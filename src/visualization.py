@@ -18,6 +18,7 @@ import umap
 import predict
 import random
 import math
+from scipy.spatial import Voronoi, voronoi_plot_2d
 
 
 def plot_ae_tsne(encoder, ce_weights, figures, dataset, epoch=''): #TODO add legend
@@ -44,12 +45,13 @@ def plot_ae_tsne(encoder, ce_weights, figures, dataset, epoch=''): #TODO add leg
     # ax.scatter(centers3d[0], centers3d[1], centers3d[2], c='black')
     # plt.savefig(os.path.join(figures, 'kmeans_ae_' + epoch))
     fig = plt.figure()
-    tsne = TSNE(n_components=2)
+    tsne = TSNE(n_components=2, perplexity=30, n_iter=1000)
     embedding = tsne.fit_transform(features)
-    #centers2d = tsne.fit_transform(centers3d)
+    # centers2d = tsne.fit_transform(centers3d)
     plt.scatter(embedding[:, 0], embedding[:, 1], c=y_pred, s=20, cmap='brg')
     #plt.scatter(centers2d[0], centers2d[1], c='black')
     plt.savefig(os.path.join(figures, 'tsne_encoder_' + epoch))
+
     print('saved scatter plot ae')
 
 
@@ -78,6 +80,13 @@ def plot_ae_umap(encoder, ce_weights, figures, dataset, epoch=''):
     print('saved scatter plot ae')
 
 
+def plot_voronoi(centers, y_kmeans): 
+    vor = Voronoi(centers) 
+    voronoi_plot_2d(vor) 
+    plt.scatter(X[:, 0], X[:, 1], c=y_kmeans, s=5, cmap='summer') 
+    plt.show()
+
+
 def plot_pretrain_metrics(file, save_dir):
     '''
     This function reads a csv file containing the pretraining metrics, plots
@@ -93,32 +102,6 @@ def plot_pretrain_metrics(file, save_dir):
     plt.xlabel('Epoch')
     plt.legend(['Training loss', 'Validation loss'])
     plt.savefig(os.path.join(save_dir, 'pretrain_metrics'))
-
-
-def plot_dcec_tsne(model, models_directory, figures, dataset):
-    """
-    parameters:
-    - model: keras model,
-    - models_directory: directory containing the models,
-    - figures: directory to save the plots
-    - dataset: dataset on which to predict (train, val, test)
-
-    Loads the model weigths from models directory, predicts model output,
-    perfoms kmeans and tsne and plots result.
-    """
-    for model_name in tqdm(os.listdir(models_directory)):
-        ite = model_name.split('_')[2].split('.')[0]
-        model.load_weights(os.path.join(models_directory, model_name))
-        kmeans = KMeans(n_clusters=cfg.n_clusters, n_init=50)
-        features = model.predict(dataset)[0]
-        y_pred = kmeans.fit_predict(features)
-        tsne = TSNE(n_components=2, perplexity=50)
-        embedding = tsne.fit_transform(features)
-        plt.figure()
-        plt.scatter(
-            embedding[:, 0], embedding[:, 1], c=y_pred, s=20, cmap='brg')
-        plt.savefig(os.path.join(figures, 'tsne_{}'.format(ite)))
-        print('saved scatter plot ite_{}'.format(ite))
 
 
 def plot_train_metrics(file, save_dir):
@@ -213,18 +196,6 @@ def plot_train_metrics(file, save_dir):
     plt.xlabel('Epoch')
     plt.legend(['Train', 'Validation'])
     plt.savefig(os.path.join(save_dir, 'train_val_acc_nmi_ari'))
-
-
-def test_dcec(model, x, y):
-    metrics = {}
-    test_q, _ = model.predict(x, verbose=0)
-    # test_p = target_distribution(test_q)
-    # test_loss = model.fit(x=x, y=[test_p, x], verbose=0)
-    y_test_pred = test_q.argmax(1)
-    metrics['test_acc'] = acc(y, y_test_pred)
-    metrics['test_nmi'] = nmi(y, y_test_pred)
-    metrics['test_ari'] = ari(y, y_test_pred)
-    return metrics, y_test_pred
 
 
 def plot_confusion_matrix(y_true, y_pred, save_dir):

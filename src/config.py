@@ -26,7 +26,7 @@ tables = '/home/fquaren/unimib/tesi/data/tables'
 figures = '/home/fquaren/unimib/tesi/reports/figures'
 experiments = '/home/fquaren/unimib/tesi/experiments'
 
-exp = 'aspc_29_CAE'
+exp = 'aspc_32_64_300'
 
 ae_models = os.path.join(models, exp, 'ae')
 ae_weights = os.path.join(models, exp, 'ae', 'ae_weights')
@@ -36,7 +36,7 @@ ce_weights = os.path.join(models, exp, 'ae', 'ce_weights')
 pretrain_epochs = 10000
 ae_batch_size = 16
 my_callbacks = [
-    EarlyStopping(patience=50, monitor='val_loss'),
+    EarlyStopping(patience=25, monitor='val_loss'),
     ModelCheckpoint(
         filepath=ae_weights,
         save_best_only=True,
@@ -52,11 +52,11 @@ dcec_bs = 64
 maxiter = 3000
 update_interval = 100
 save_interval = update_interval
-gamma = 0.001
+gamma = 0.01
 index = 0
 
-learning_rate_fn = ExponentialDecay(initial_learning_rate=0.0001, decay_steps=500, decay_rate=0.96)
-finetune_optim = Adam(learning_rate=1e-4)
+# learning_rate_fn = ExponentialDecay(initial_learning_rate=0.0001, decay_steps=500, decay_rate=0.96)
+# finetune_optim = Adam(learning_rate=1e-4)
 
 # Pandas dataframe
 d = {
