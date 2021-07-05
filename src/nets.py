@@ -76,7 +76,7 @@ def autoencoder(input_shape=(128, 128, 1), filters=[32, 64, 300]):
     x = Conv2DTranspose(filters[0], 4, strides=2, padding='same', activation='relu', name='deconv2', kernel_initializer=init)(x)
     decoded = Conv2DTranspose(1, 4, strides=2, padding='same', name='deconv1', kernel_initializer=init)(x)
 
-    return Model(inputs=input_img, outputs=decoded, name='CAE')
+    return Model(inputs=input_img, outputs=decoded, name='CAE'), Model(inputs=input_img, outputs=encoded, name='CE')
 
 
 def encoder(input_shape=(128, 128, 1), filters=[32, 64, 300]):

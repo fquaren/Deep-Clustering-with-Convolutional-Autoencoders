@@ -32,8 +32,8 @@ def pred_ae(net, weights, directory, scans, figures, exp, n):
     Predict the output of the net from a test image and save the prediction
     (one for each scan).
     '''
+    net.load_weights(weights)
     for scan in scans:
-        net.load_weights(weights)
         img_1 = get_image(get_list_per_type(directory, scan), n)
         img_2 = get_image(get_list_per_type(directory, scan), n-1)
         images = [img_1, img_2]
@@ -49,10 +49,10 @@ def pred_ae(net, weights, directory, scans, figures, exp, n):
     print('Prediction on test images done.')
 
 
-def init_kmeans(x, y, n_clusters=3, n_init_kmeans=100, verbose=True, weights=cfg.ce_weights):
+def init_kmeans(x, y, n_clusters=3, verbose=True, weights=cfg.ce_weights):
     encoder = nets.encoder()
     encoder.load_weights(weights)   
-    kmeans = KMeans(n_clusters=n_clusters, n_init=n_init_kmeans)
+    kmeans = KMeans(n_clusters=n_clusters)
     embedding = encoder.predict(x)
     y_pred = kmeans.fit_predict(embedding)
     centers = kmeans.cluster_centers_
@@ -61,26 +61,24 @@ def init_kmeans(x, y, n_clusters=3, n_init_kmeans=100, verbose=True, weights=cfg
         print('acc = {}; nmi = {}'.format(acc(y, y_pred), nmi(y, y_pred)))
     cfg.d_ae['acc'] = acc(y, y_pred)
     cfg.d_ae['nmi'] = nmi(y, y_pred)
-
     return y_pred, centers
 
 
-def init_kmeans_on_projection(x, y, n_clusters=3, n_init_kmeans=100, verbose=True, weights=cfg.ce_weights):
-    _, encoder = nets.autoencoder()
-    encoder.load_weights(weights)
-    features, _ = encoder.predict(x)
-    transformer = cluster.FeatureAgglomeration(n_clusters=3)
-    embedding = transformer.fit_transform(features)
-    kmeans = KMeans(n_clusters=n_clusters, n_init=n_init_kmeans)
-    y_pred = kmeans.fit_predict(embedding)
-    centers = kmeans.cluster_centers_
-    if verbose:
-        print('metrics:')
-        print('acc = {}; nmi = {}'.format(acc(y, y_pred), nmi(y, y_pred)))
-    cfg.d_ae['acc'] = acc(y, y_pred)
-    cfg.d_ae['nmi'] = nmi(y, y_pred)  
-
-    return y_pred, centers
+# def init_kmeans_on_projection(x, y, n_clusters=3, verbose=True, weights=cfg.ce_weights):
+#     _, encoder = nets.autoencoder()
+#     encoder.load_weights(weights)
+#     features, _ = encoder.predict(x)
+#     transformer = cluster.FeatureAgglomeration(n_clusters=3)
+#     embedding = transformer.fit_transform(features)
+#     kmeans = KMeans(n_clusters=n_clusters, n_init=n_init_kmeans)
+#     y_pred = kmeans.fit_predict(embedding)
+#     centers = kmeans.cluster_centers_
+#     if verbose:
+#         print('metrics:')
+#         print('acc = {}; nmi = {}'.format(acc(y, y_pred), nmi(y, y_pred)))
+#     cfg.d_ae['acc'] = acc(y, y_pred)
+#     cfg.d_ae['nmi'] = nmi(y, y_pred)
+#     return y_pred, centers
 
 
 if __name__ == "__main__":

@@ -33,7 +33,7 @@ ae_weights = os.path.join(models, exp, 'ae', 'ae_weights')
 ce_weights = os.path.join(models, exp, 'ae', 'ce_weights')
 
 # Pretrain ae settings
-pretrain_epochs = 10000
+pretrain_epochs = 10
 ae_batch_size = 16
 my_callbacks = [
     EarlyStopping(patience=25, monitor='val_loss'),

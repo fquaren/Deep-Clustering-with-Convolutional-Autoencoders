@@ -11,7 +11,7 @@ from tqdm import tqdm
 import pandas as pd
 import config as cfg
 from build_and_save_features import load_dataset
-from metrics import acc, nmi, ari
+from metrics import acc, nmi
 import nets
 from mpl_toolkits.mplot3d import Axes3D
 import umap
@@ -21,7 +21,7 @@ import math
 from scipy.spatial import Voronoi, voronoi_plot_2d
 
 
-def plot_ae_tsne(encoder, ce_weights, figures, dataset, epoch=''): #TODO add legend
+def plot_ae_tsne(encoder, ce_weights, figures, dataset, epoch=''):
 
     """
     parameters:
@@ -44,12 +44,12 @@ def plot_ae_tsne(encoder, ce_weights, figures, dataset, epoch=''): #TODO add leg
     # ax.scatter(features[:, 0], features[:, 1], features[:, 2], c=y_pred, cmap='brg')
     # ax.scatter(centers3d[0], centers3d[1], centers3d[2], c='black')
     # plt.savefig(os.path.join(figures, 'kmeans_ae_' + epoch))
-    fig = plt.figure()
+    plt.figure()
     tsne = TSNE(n_components=2, perplexity=30, n_iter=1000)
     embedding = tsne.fit_transform(features)
     # centers2d = tsne.fit_transform(centers3d)
     plt.scatter(embedding[:, 0], embedding[:, 1], c=y_pred, s=20, cmap='brg')
-    #plt.scatter(centers2d[0], centers2d[1], c='black')
+    # plt.scatter(centers2d[0], centers2d[1], c='black')
     plt.savefig(os.path.join(figures, 'tsne_encoder_' + epoch))
 
     print('saved scatter plot ae')
@@ -282,17 +282,16 @@ def feature_map(scan, layer, depth, exp):
     plt.savefig(os.path.join(cfg.figures, cfg.exp, 'feature_maps', 'conv_layer_' + scan + '_' + str(layer) + '.png'))
 
 
-
 if __name__ == "__main__":
     x_train, y_train = load_dataset('x_train.npy', 'y_train.npy')
     x_test, y_test = load_dataset('x_test.npy', 'y_test.npy')
 
-    # feature_map(scan=cfg.scans[0], exp='aspc_29_CAE', layer=1, depth=32)
-    # feature_map(scan=cfg.scans[1], exp='aspc_29_CAE', layer=1, depth=32)
-    # feature_map(scan=cfg.scans[2], exp='aspc_29_CAE', layer=1, depth=32)
-    # feature_map(scan=cfg.scans[0], exp='aspc_29_CAE', layer=2, depth=64)
-    # feature_map(scan=cfg.scans[1], exp='aspc_29_CAE', layer=2, depth=64)
-    # feature_map(scan=cfg.scans[2], exp='aspc_29_CAE', layer=2, depth=64)
+    feature_map(scan=cfg.scans[0], exp='aspc_29_CAE', layer=1, depth=32)
+    feature_map(scan=cfg.scans[1], exp='aspc_29_CAE', layer=1, depth=32)
+    feature_map(scan=cfg.scans[2], exp='aspc_29_CAE', layer=1, depth=32)
+    feature_map(scan=cfg.scans[0], exp='aspc_29_CAE', layer=2, depth=64)
+    feature_map(scan=cfg.scans[1], exp='aspc_29_CAE', layer=2, depth=64)
+    feature_map(scan=cfg.scans[2], exp='aspc_29_CAE', layer=2, depth=64)
 
     # autoencoder, encoder = nets.autoencoder(x_test)
 

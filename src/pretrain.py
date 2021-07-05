@@ -1,22 +1,14 @@
-from tensorflow.keras import callbacks
 from predict import pred_ae, init_kmeans
 import random
 import os
 import config as cfg
 import pandas as pd
-from keras.models import Model
-from sklearn.cluster import KMeans
-from nets import autoencoder
-from metrics import nmi, ari, acc
 from build_and_save_features import load_dataset
 import nets
 from time import time
 import visualization as viz
-from tensorflow.keras.optimizers import Adam
 import math
-from tensorflow.keras.preprocessing.image import ImageDataGenerator, NumpyArrayIterator
-import numpy as np
-from generators import generator, MyImageGenerator, generators, generators_da
+from generators import generators
 
 
 def pretrain(
@@ -27,17 +19,16 @@ def pretrain(
     batch_size,
     pretrain_epochs,
     my_callbacks,
-    ae_models,
     optim,
     da=False
 ):
-   
+
     train_generator, val_generator = generators(
-        x_train, 
-        x_val, 
+        x_train,
+        x_val,
         cfg.ae_batch_size
     )
-    
+
     print('pretraining...')
     autoencoder.summary()
     autoencoder.compile(optimizer=optim, loss='mse')
@@ -51,11 +42,11 @@ def pretrain(
         validation_data=val_generator,
         validation_steps=math.ceil(x_val.shape[0] / batch_size),
         callbacks=my_callbacks
-    ) 
+    )
 
     print('pretraining time: ', time() - t0)
-    autoencoder.save_weights(os.path.join(ae_models, 'ae_weights'))
-    encoder.save_weights(os.path.join(ae_models, 'ce_weights'))
+    autoencoder.save_weights(cfg.ae_weights)
+    encoder.save_weights(cfg.ce_weights)
     # save plot metrics
     cfg.d_ae['train_loss'] = autoencoder.history.history['loss']
     cfg.d_ae['val_loss'] = autoencoder.history.history['val_loss']
@@ -66,7 +57,7 @@ def pretrain(
             cfg.tables,
             cfg.exp,
             'ae_train.csv'
-            ), 
+        ),
         index=False
     )
     print('weigths and metrics saved.')
@@ -85,12 +76,12 @@ if __name__ == "__main__":
     os.makedirs(os.path.join(cfg.figures, cfg.exp, 'ae'), exist_ok=True)
     os.makedirs(os.path.join(cfg.models, cfg.exp, 'ae'), exist_ok=True)
 
-    autoencoder = nets.autoencoder()
-    encoder = nets.encoder()
+    autoencoder, encoder = nets.autoencoder()
     x_train = x_train.reshape(x_train.shape[0], 128, 128, 1)
     x_val = x_val.reshape(x_val.shape[0], 128, 128, 1)
     x_test = x_test.reshape(x_test.shape[0], 128, 128, 1)
 
+    # # pretrain
     pretrain(
         autoencoder=autoencoder,
         encoder=encoder,
@@ -99,13 +90,12 @@ if __name__ == "__main__":
         batch_size=cfg.ae_batch_size,
         pretrain_epochs=cfg.pretrain_epochs,
         my_callbacks=cfg.my_callbacks,
-        ae_models=cfg.ae_models,
         optim=cfg.ae_optim
     )
 
+    # kmeans initialization
     _, _ = init_kmeans(
         n_clusters=cfg.n_clusters,
-        n_init_kmeans=cfg.n_init_kmeans,
         x=x_train,
         y=y_train,
     )
@@ -116,15 +106,15 @@ if __name__ == "__main__":
         save_dir=os.path.join(cfg.figures, cfg.exp, 'ae'),
     )
     viz.plot_ae_tsne(
-        nets.encoder(), 
-        cfg.ce_weights, 
-        os.path.join(cfg.figures, cfg.exp, 'ae'), 
+        nets.encoder(),
+        cfg.ce_weights,
+        os.path.join(cfg.figures, cfg.exp, 'ae'),
         x_test
     )
     viz.plot_ae_umap(
-        nets.encoder(), 
-        cfg.ce_weights, 
-        os.path.join(cfg.figures, cfg.exp, 'ae'), 
+        nets.encoder(),
+        cfg.ce_weights,
+        os.path.join(cfg.figures, cfg.exp, 'ae'),
         x_test
     )
     pred_ae(
