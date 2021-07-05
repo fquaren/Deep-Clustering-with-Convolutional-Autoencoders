@@ -9,10 +9,6 @@ import nets
 from sklearn.cluster import KMeans
 import random
 from metrics import acc, nmi
-from sklearn.manifold import TSNE
-from sklearn.decomposition import FastICA, PCA
-from sklearn import random_projection, cluster
-import umap
 
 
 def get_list_per_type(path, scan):
@@ -27,7 +23,7 @@ def get_image(names, n):
     return image
 
 
-def pred_ae(net, weights, directory, scans, figures, exp, n):
+def pred_ae(net, weights, directory, exp=cfg.exp, n=random.randint(0, 10), scans=cfg.scans, figures=cfg.figures,):
     '''
     Predict the output of the net from a test image and save the prediction
     (one for each scan).
@@ -51,8 +47,8 @@ def pred_ae(net, weights, directory, scans, figures, exp, n):
 
 def init_kmeans(x, y, n_clusters=3, verbose=True, weights=cfg.ce_weights):
     encoder = nets.encoder()
-    encoder.load_weights(weights)   
-    kmeans = KMeans(n_clusters=n_clusters)
+    encoder.load_weights(weights)
+    kmeans = KMeans(n_clusters=n_clusters, n_init=300)
     embedding = encoder.predict(x)
     y_pred = kmeans.fit_predict(embedding)
     centers = kmeans.cluster_centers_
@@ -62,23 +58,6 @@ def init_kmeans(x, y, n_clusters=3, verbose=True, weights=cfg.ce_weights):
     cfg.d_ae['acc'] = acc(y, y_pred)
     cfg.d_ae['nmi'] = nmi(y, y_pred)
     return y_pred, centers
-
-
-# def init_kmeans_on_projection(x, y, n_clusters=3, verbose=True, weights=cfg.ce_weights):
-#     _, encoder = nets.autoencoder()
-#     encoder.load_weights(weights)
-#     features, _ = encoder.predict(x)
-#     transformer = cluster.FeatureAgglomeration(n_clusters=3)
-#     embedding = transformer.fit_transform(features)
-#     kmeans = KMeans(n_clusters=n_clusters, n_init=n_init_kmeans)
-#     y_pred = kmeans.fit_predict(embedding)
-#     centers = kmeans.cluster_centers_
-#     if verbose:
-#         print('metrics:')
-#         print('acc = {}; nmi = {}'.format(acc(y, y_pred), nmi(y, y_pred)))
-#     cfg.d_ae['acc'] = acc(y, y_pred)
-#     cfg.d_ae['nmi'] = nmi(y, y_pred)
-#     return y_pred, centers
 
 
 if __name__ == "__main__":
@@ -92,16 +71,5 @@ if __name__ == "__main__":
     x_val = x_val.reshape(x_val.shape[0], 128, 128, 1)
     x_test = x_test.reshape(x_test.shape[0], 128, 128, 1)
 
-    #encoder.load_weights(cfg.ce_weights)
+    # encoder.load_weights(cfg.ce_weights)
     autoencoder.load_weights(cfg.ae_weights)
-
-    pred_ae(
-        net=autoencoder,
-        weights=os.path.join(cfg.models, cfg.exp, 'ae', 'ae_weights'),
-        directory=cfg.test_directory,
-        scans=cfg.scans,
-        figures=cfg.figures,
-        exp=cfg.exp,
-        n=random.randint(0, 10)
-    )
-

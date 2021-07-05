@@ -1,9 +1,5 @@
 import os
-import tensorflow as tf
-from keras.optimizers.schedules import PiecewiseConstantDecay, ExponentialDecay
 from keras.callbacks import EarlyStopping, ModelCheckpoint
-import nets
-from tensorflow.keras.optimizers import Adam
 
 scans = ['CT', 'MRI', 'PET']
 n_clusters = 3  # len(scans)
@@ -26,14 +22,14 @@ tables = '/home/fquaren/unimib/tesi/data/tables'
 figures = '/home/fquaren/unimib/tesi/reports/figures'
 experiments = '/home/fquaren/unimib/tesi/experiments'
 
-exp = 'aspc_32_64_300'
+exp = 'aspc_16_32_64_30'
 
 ae_models = os.path.join(models, exp, 'ae')
 ae_weights = os.path.join(models, exp, 'ae', 'ae_weights')
 ce_weights = os.path.join(models, exp, 'ae', 'ce_weights')
 
 # Pretrain ae settings
-pretrain_epochs = 10
+pretrain_epochs = 10000
 ae_batch_size = 16
 my_callbacks = [
     EarlyStopping(patience=25, monitor='val_loss'),
@@ -44,7 +40,6 @@ my_callbacks = [
         monitor='val_loss'
     )
 ]
-ae_optim = 'adam'
 
 # Train DCEC settings
 n_init_kmeans = 100

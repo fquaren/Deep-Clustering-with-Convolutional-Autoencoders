@@ -38,6 +38,7 @@ def generator(image_generator, x, y=None, sample_weight=None, batch_size=16, shu
                      ([] if sample_weight is None else [sample_weight[idx]])
             yield tuple(result)
 
+
 class MyIterator(NumpyArrayIterator):
     """
     The only difference with NumpyArrayIterator is this.next() returns (samples, index) while NumpyArrayIterator

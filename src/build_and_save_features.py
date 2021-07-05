@@ -124,13 +124,13 @@ def create_tensors(path):
     images = glob.glob(path+'/**/**.png')
     X, Y = read_images(images)  # normalization done at the train directory level
     X = np.dstack(X)
-    X = X.reshape([X.shape[0], -1]) / 255.  
+    X = X.reshape([X.shape[0], -1]) / 255.
     # X = np.rollaxis(X, -1)
     # X -= np.mean(X)  # mean subtraction
     # X /= np.std(X, axis = 0)  # normalization
     # X = X.reshape(X.shape + (1,))
-    random.shuffle(X)
-    random.shuffle(Y)
+    # random.shuffle(X)
+    # random.shuffle(Y)
     return X, Y
 
 

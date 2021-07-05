@@ -16,11 +16,10 @@ def pretrain(
     encoder,
     x_train,
     x_val,
-    batch_size,
-    pretrain_epochs,
-    my_callbacks,
-    optim,
-    da=False
+    batch_size=cfg.ae_batch_size,
+    pretrain_epochs=cfg.pretrain_epochs,
+    my_callbacks=cfg.my_callbacks,
+    optim='adam',
 ):
 
     train_generator, val_generator = generators(
@@ -34,7 +33,6 @@ def pretrain(
     autoencoder.compile(optimizer=optim, loss='mse')
 
     # train model
-    t0 = time()
     autoencoder.fit(
         train_generator,
         steps_per_epoch=math.ceil(x_train.shape[0] / batch_size),
@@ -44,9 +42,8 @@ def pretrain(
         callbacks=my_callbacks
     )
 
-    print('pretraining time: ', time() - t0)
     autoencoder.save_weights(cfg.ae_weights)
-    encoder.save_weights(cfg.ce_weights)
+    # encoder.save_weights(cfg.ce_weights)
     # save plot metrics
     cfg.d_ae['train_loss'] = autoencoder.history.history['loss']
     cfg.d_ae['val_loss'] = autoencoder.history.history['val_loss']
@@ -61,6 +58,12 @@ def pretrain(
         index=False
     )
     print('weigths and metrics saved.')
+
+    pred_ae(
+        net=autoencoder,
+        weights=cfg.ae_weights,
+        directory=cfg.train_directory,
+    )
 
 
 if __name__ == "__main__":
@@ -81,26 +84,14 @@ if __name__ == "__main__":
     x_val = x_val.reshape(x_val.shape[0], 128, 128, 1)
     x_test = x_test.reshape(x_test.shape[0], 128, 128, 1)
 
-    # # pretrain
+    # pretrain
     pretrain(
         autoencoder=autoencoder,
         encoder=encoder,
         x_train=x_train,
         x_val=x_val,
-        batch_size=cfg.ae_batch_size,
-        pretrain_epochs=cfg.pretrain_epochs,
-        my_callbacks=cfg.my_callbacks,
-        optim=cfg.ae_optim
     )
 
-    # kmeans initialization
-    _, _ = init_kmeans(
-        n_clusters=cfg.n_clusters,
-        x=x_train,
-        y=y_train,
-    )
-
-    # visualization
     viz.plot_pretrain_metrics(
         file=os.path.join(cfg.tables, cfg.exp, 'ae_train.csv'),
         save_dir=os.path.join(cfg.figures, cfg.exp, 'ae'),
@@ -109,21 +100,21 @@ if __name__ == "__main__":
         nets.encoder(),
         cfg.ce_weights,
         os.path.join(cfg.figures, cfg.exp, 'ae'),
-        x_test
+        x_train
     )
     viz.plot_ae_umap(
         nets.encoder(),
         cfg.ce_weights,
         os.path.join(cfg.figures, cfg.exp, 'ae'),
-        x_test
-    )
-    pred_ae(
-        net=autoencoder,
-        weights=os.path.join(cfg.models, cfg.exp, 'ae', 'ae_weights'),
-        directory=cfg.test_directory,
-        scans=cfg.scans,
-        figures=cfg.figures,
-        exp=cfg.exp,
-        n=random.randint(0, 10)
+        x_train
     )
     print('plots pretrain done.')
+
+    # eval
+    autoencoder.evaluate(
+        x_test,
+        x_test,
+        batch_size=cfg.ae_batch_size,
+        verbose=True,
+        return_dict=True
+    )
