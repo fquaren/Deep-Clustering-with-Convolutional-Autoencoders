@@ -54,7 +54,7 @@ def init_kmeans(x, y, n_clusters=3, verbose=True, weights=cfg.ce_weights):
     centers = kmeans.cluster_centers_
     if verbose:
         print('metrics:')
-        print('acc = {}; nmi = {}'.format(acc(y, y_pred), nmi(y, y_pred)))
+        print('ACC = {}; NMI = {}'.format(acc(y, y_pred), nmi(y, y_pred)))
     cfg.d_ae['acc'] = acc(y, y_pred)
     cfg.d_ae['nmi'] = nmi(y, y_pred)
     return y_pred, centers

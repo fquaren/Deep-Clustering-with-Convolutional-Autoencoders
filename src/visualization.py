@@ -45,7 +45,7 @@ def plot_ae_tsne(encoder, ce_weights, figures, dataset, epoch=''):
     # ax.scatter(centers3d[0], centers3d[1], centers3d[2], c='black')
     # plt.savefig(os.path.join(figures, 'kmeans_ae_' + epoch))
     plt.figure()
-    tsne = TSNE(n_components=2, perplexity=30, n_iter=5000)
+    tsne = TSNE(n_components=2, perplexity=50, n_iter=3000)
     embedding = tsne.fit_transform(features)
     # centers2d = tsne.fit_transform(centers3d)
     plt.scatter(embedding[:, 0], embedding[:, 1], c=y_pred, s=20, cmap='brg')
@@ -76,7 +76,7 @@ def plot_ae_umap(encoder, ce_weights, figures, dataset, epoch=''):
     reducer.fit(features)
     embedding = reducer.transform(features)
     centers2d = reducer.transform(centers)
-    fig = plt.figure()
+    plt.figure()
     plt.scatter(embedding[:, 0], embedding[:, 1], c=y_pred, s=20, cmap='brg')
     plt.scatter(centers2d[:, 0], centers2d[:, 1], c='black', s=100)
     plt.savefig(os.path.join(figures, 'umap_encoder_' + epoch))
@@ -201,9 +201,11 @@ def plot_train_metrics(file, save_dir):
     plt.savefig(os.path.join(save_dir, 'train_val_acc_nmi_ari'))
 
 
-def plot_confusion_matrix(y_true, y_pred, save_dir):
-    matrix = confusion_matrix(
-        [int(i) for i in y_true], y_pred)
+def plot_confusion_matrix(y_true, y_pred, save_dir=os.path.join(cfg.figures, cfg.exp)):
+    # matrix = confusion_matrix(
+    #     [int(i) for i in y_true], y_pred)
+
+    matrix = confusion_matrix(y_true=y_true, y_pred=y_pred)
 
     plt.figure()
     sns.heatmap(matrix, annot=True, fmt="d", annot_kws={"size": 20})
@@ -214,6 +216,7 @@ def plot_confusion_matrix(y_true, y_pred, save_dir):
 
     D = max(y_pred.max(), y_true.max()) + 1
     w = np.zeros((D, D), dtype=np.int64)
+    
     # Confusion matrix.
     for i in range(y_pred.size):
         w[y_pred[i], y_true[i]] += 1

@@ -90,12 +90,12 @@ def generators(x_train, x_val, batch_size):
 
     # setup generator
     train_generator = train_datagen.flow(
-        x_train, 
+        x_train,
         x_train,
         batch_size=batch_size,
     )
     val_generator = val_datagen.flow(
-        x_val, 
+        x_val,
         x_val,
         batch_size=batch_size,
         shuffle=False
@@ -105,7 +105,7 @@ def generators(x_train, x_val, batch_size):
 
 
 def generators_da(x_train, x_val, batch_size):
-    
+
     # define data augmentation configuration
     train_datagen = MyImageGenerator(
         rescale=1./225,

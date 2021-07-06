@@ -239,7 +239,7 @@ if __name__ == "__main__":
     #             y_val=y_val, batch_size=16, epochs=1000)
 
     print('final metrics:')
-    _, _ = init_kmeans(x=x_test, y=y_test, weights=os.path.join(
+    y_pred, _ = init_kmeans(x=x_test, y=y_test, weights=os.path.join(
         cfg.ae_models, 'final_encoder_weights'))
 
     viz.plot_ae_tsne(
@@ -254,3 +254,12 @@ if __name__ == "__main__":
         os.path.join(cfg.figures, cfg.exp),
         x_test
     )
+    
+    viz.plot_confusion_matrix(y_test, y_pred)
+
+    viz.feature_map(scan=cfg.scans[0], exp=cfg.exp, layer=1, depth=32)
+    viz.feature_map(scan=cfg.scans[1], exp=cfg.exp, layer=1, depth=32)
+    viz.feature_map(scan=cfg.scans[2], exp=cfg.exp, layer=1, depth=32)
+    viz.feature_map(scan=cfg.scans[0], exp=cfg.exp, layer=2, depth=64)
+    viz.feature_map(scan=cfg.scans[1], exp=cfg.exp, layer=2, depth=64)
+    viz.feature_map(scan=cfg.scans[2], exp=cfg.exp, layer=2, depth=64)

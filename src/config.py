@@ -22,7 +22,7 @@ tables = '/home/fquaren/unimib/tesi/data/tables'
 figures = '/home/fquaren/unimib/tesi/reports/figures'
 experiments = '/home/fquaren/unimib/tesi/experiments'
 
-exp = 'aspc_final'
+exp = 'aspc_CAE_BN_32'
 
 ae_models = os.path.join(models, exp, 'ae')
 ae_weights = os.path.join(models, exp, 'ae', 'ae_weights')
@@ -40,13 +40,13 @@ my_callbacks = [
         save_weights_only=True,
         monitor='val_loss'
     ),
-    ReduceLROnPlateau(
-        monitor='val_loss',
-        factor=0.1,
-        patience=20,
-        verbose=1,
-        mode='min'
-    )
+    # ReduceLROnPlateau(
+    #     monitor='val_loss',
+    #     factor=0.1,
+    #     patience=20,
+    #     verbose=1,
+    #     mode='min'
+    # )
 ]
 
 
