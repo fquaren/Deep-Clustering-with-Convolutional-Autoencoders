@@ -47,7 +47,7 @@ my_callbacks = [
 kmeans = KMeans(
     n_clusters=n_clusters,
     n_init=100,
-    #random_state=12
+    random_state=0
 )
 
 # random state 0 ->
@@ -61,4 +61,10 @@ random_state_acc = {
     'random_state': [],
     'acc': [],
     'nmi': [],
+}
+
+final_random_state_acc = {
+    'random_state': [],
+    'test_acc': [],
+    'test_nmi': [],
 }

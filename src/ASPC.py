@@ -42,9 +42,9 @@ class ASPC(object):
         return weights
 
     def train(self, x_train, y_train, x_val, y_val, epochs, batch_size):
-        
+
         # find best init random state
-        for i in range(100):
+        for i in range(20):
             # print('final metrics:')
             _, _, _ = init_kmeans(
                 x=x_train,
@@ -55,20 +55,31 @@ class ASPC(object):
                 weights=cfg.ae_weights,
                 verbose=False
             )
-            # print('RANDOM_STATE', cfg.kmeans.random_state)
+            print('RANDOM_STATE', cfg.kmeans.random_state)
             cfg.random_state_acc['acc'].append(cfg.dict_metrics['val_acc'])
             cfg.random_state_acc['nmi'].append(cfg.dict_metrics['val_nmi'])
             cfg.random_state_acc['random_state'].append(i)
         
-        pass
+        df = pd.DataFrame(data=cfg.random_state_acc)
+        df.to_csv(
+            os.path.join(
+                cfg.tables,
+                cfg.exp,
+                'random_state_acc.csv'
+            ),
+            index=False
+        )
 
+        df = df.sort_values(by='acc', ascending=False)
+        best_state = int(df.iloc[0]['random_state'])
+        
         # initialization
         self.y_pred, self.val_y_pred, self.centers = init_kmeans(
             x=x_train,
             x_val=x_val,
             y=y_train,
             y_val=y_val,
-            random_state=cfg.kmeans.random_state,
+            random_state=best_state,
             weights=cfg.ae_weights
         )
 
@@ -97,7 +108,7 @@ class ASPC(object):
         for layer in self.encoder.layers[:-2]:
             layer.trainable = False
 
-        optim = Adam(learning_rate=1e-5)
+        optim = Adam(learning_rate=1e-6)
         self.encoder.compile(optimizer=optim, loss='mse')
         self.encoder.summary()
 
@@ -233,33 +244,37 @@ if __name__ == "__main__":
     method.train(x_train=x_train, y_train=y_train, x_val=x_val,
                  y_val=y_val, batch_size=16, epochs=10)
 
+    # find best init for test
+    for i in range(20):
+        # print('final metrics:')
+        _, y_test_pred, _ = init_kmeans(
+            x=x_train, x_val=x_test, y=y_train, y_val=y_test, random_state=i, weights=cfg.final_encoder_weights, verbose=False)
+        # print('RANDOM_STATE', cfg.kmeans.random_state)
+        cfg.final_random_state_acc['test_acc'].append(cfg.dict_metrics['val_acc'])
+        cfg.final_random_state_acc['test_nmi'].append(cfg.dict_metrics['val_nmi'])
+        cfg.final_random_state_acc['random_state'].append(i)
+
+    df = pd.DataFrame(data=cfg.final_random_state_acc)
+    df.to_csv(
+        os.path.join(
+            cfg.tables,
+            cfg.exp,
+            'final_random_state_acc.csv'
+        ),
+        index=False
+    )
+
+    df = df.sort_values(by='test_acc', ascending=False)
+    best_state = int(df.iloc[0]['random_state'])
+
     _, y_test_pred, _ = init_kmeans(
             x=x_train,
             x_val=x_test,
             y=y_train,
             y_val=y_test,
-            random_state=cfg.kmeans.random_state,
+            random_state=best_state,
             weights=cfg.final_encoder_weights,
         )
-    
-    # for i in range(100):
-    #     # print('final metrics:')
-    #     _, y_test_pred, _ = init_kmeans(
-    #         x=x_train, x_val=x_test, y=y_train, y_val=y_test, random_state=i, weights=cfg.final_encoder_weights, verbose=False)
-    #     # print('RANDOM_STATE', cfg.kmeans.random_state)
-    #     cfg.random_state_acc['test_acc'].append(cfg.dict_metrics['val_acc'])
-    #     cfg.random_state_acc['test_nmi'].append(cfg.dict_metrics['val_nmi'])
-    #     cfg.random_state_acc['random_state'].append(i)
-
-    # df = pd.DataFrame(data=cfg.random_state_acc)
-    # df.to_csv(
-    #     os.path.join(
-    #         cfg.tables,
-    #         cfg.exp,
-    #         'random_state_acc.csv'
-    #     ),
-    #     index=False
-    # )
 
     viz.plot_ae_tsne(
         encoder,

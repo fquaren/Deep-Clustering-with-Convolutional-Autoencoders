@@ -84,12 +84,10 @@ def plot_ae_umap(encoder, weights, figures, train_dataset, dataset, epoch=''):
     for region in regions:
         polygon = vertices[region]
         plt.fill(*zip(*polygon), alpha=0.4)
-    plt.plot(centers2d[:, 0], centers2d[:, 1], 'ko')
-    plt.xlim((min_x - 1, max_x + 1))
-    plt.ylim((min_y - 1, max_y + 1))
-
     plt.scatter(test_embedding[:, 0], test_embedding[:, 1], c=y_test_pred, s=20, cmap='brg')
     plt.scatter(centers2d[:, 0], centers2d[:, 1], c='black', s=100)
+    plt.xlim((min_x - 1, max_x + 1))
+    plt.ylim((min_y - 1, max_y + 1))
     plt.savefig(os.path.join(figures, 'umap_encoder_' + epoch))
     print('saved scatter plot ae')
 
