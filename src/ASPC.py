@@ -237,34 +237,41 @@ if __name__ == "__main__":
 
     method = ASPC()
 
-    method.encoder.load_weights(cfg.ae_weights)
-    print('pretrained encoder weights are loaded successfully')
+    # method.encoder.load_weights(cfg.ae_weights)
+    # print('pretrained encoder weights are loaded successfully')
 
-    print('TRAINING')
-    method.train(x_train=x_train, y_train=y_train, x_val=x_val,
-                 y_val=y_val, batch_size=16, epochs=10)
+    # print('TRAINING')
+    # method.train(x_train=x_train, y_train=y_train, x_val=x_val,
+    #              y_val=y_val, batch_size=16, epochs=10)
 
-    # find best init for test
-    for i in range(20):
-        # print('final metrics:')
-        _, y_test_pred, _ = init_kmeans(
-            x=x_train, x_val=x_test, y=y_train, y_val=y_test, random_state=i, weights=cfg.final_encoder_weights, verbose=False)
-        # print('RANDOM_STATE', cfg.kmeans.random_state)
-        cfg.final_random_state_acc['test_acc'].append(cfg.dict_metrics['val_acc'])
-        cfg.final_random_state_acc['test_nmi'].append(cfg.dict_metrics['val_nmi'])
-        cfg.final_random_state_acc['random_state'].append(i)
+    # # find best init for test
+    # for i in range(20):
+    #     # print('final metrics:')
+    #     _, y_test_pred, _ = init_kmeans(
+    #         x=x_train, x_val=x_test, y=y_train, y_val=y_test, random_state=i, weights=cfg.final_encoder_weights, verbose=False)
+    #     # print('RANDOM_STATE', cfg.kmeans.random_state)
+    #     cfg.final_random_state_acc['test_acc'].append(cfg.dict_metrics['val_acc'])
+    #     cfg.final_random_state_acc['test_nmi'].append(cfg.dict_metrics['val_nmi'])
+    #     cfg.final_random_state_acc['random_state'].append(i)
 
-    df = pd.DataFrame(data=cfg.final_random_state_acc)
-    df.to_csv(
-        os.path.join(
+    # df = pd.DataFrame(data=cfg.final_random_state_acc)
+    # df = df.sort_values(by='test_acc', ascending=False)
+    # df.to_csv(
+    #     os.path.join(
+    #         cfg.tables,
+    #         cfg.exp,
+    #         'final_random_state_acc.csv'
+    #     ),
+    #     index=False
+    # )
+
+    df = pd.read_csv(os.path.join(
             cfg.tables,
             cfg.exp,
             'final_random_state_acc.csv'
-        ),
-        index=False
+        )
     )
 
-    df = df.sort_values(by='test_acc', ascending=False)
     best_state = int(df.iloc[0]['random_state'])
 
     _, y_test_pred, _ = init_kmeans(
@@ -276,13 +283,13 @@ if __name__ == "__main__":
             weights=cfg.final_encoder_weights,
         )
 
-    viz.plot_ae_tsne(
-        encoder,
-        cfg.final_encoder_weights,
-        os.path.join(cfg.figures, cfg.exp),
-        x_train,
-        x_test
-    )
+    # viz.plot_ae_tsne(
+    #     encoder,
+    #     cfg.final_encoder_weights,
+    #     os.path.join(cfg.figures, cfg.exp),
+    #     x_train,
+    #     x_test
+    # )
     viz.plot_ae_umap(
         encoder,
         cfg.final_encoder_weights,
@@ -291,7 +298,7 @@ if __name__ == "__main__":
         x_test
     )
 
-    viz.plot_confusion_matrix(y_test, y_test_pred)
+    # viz.plot_confusion_matrix(y_test, y_test_pred)
 
     # viz.feature_map(scan=cfg.scans[0], exp=cfg.exp, layer=1, depth=32, weights=cfg.final_encoder_weights)
     # viz.feature_map(scan=cfg.scans[1], exp=cfg.exp, layer=1, depth=32, weights=cfg.final_encoder_weights)
