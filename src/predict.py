@@ -45,18 +45,18 @@ def pred_ae(net, weights, directory, exp=cfg.exp, n=random.randint(0, 10), scans
     print('Prediction on test images done.')
 
 
-def init_kmeans(x, y, n_clusters=3, verbose=True, weights=cfg.ce_weights):
+def init_kmeans(x, y, n_clusters=3, verbose=True, weights=cfg.ae_weights):
     encoder = nets.encoder()
     encoder.load_weights(weights)
-    kmeans = KMeans(n_clusters=n_clusters, n_init=300)
+    kmeans = KMeans(n_clusters=n_clusters, n_init=50, verbose=0)
     embedding = encoder.predict(x)
     y_pred = kmeans.fit_predict(embedding)
     centers = kmeans.cluster_centers_
     if verbose:
         print('metrics:')
         print('ACC = {}; NMI = {}'.format(acc(y, y_pred), nmi(y, y_pred)))
-    cfg.d_ae['acc'] = acc(y, y_pred)
-    cfg.d_ae['nmi'] = nmi(y, y_pred)
+    cfg.dict_metrics['acc'] = acc(y, y_pred)
+    cfg.dict_metrics['nmi'] = nmi(y, y_pred)
     return y_pred, centers
 
 
@@ -71,5 +71,4 @@ if __name__ == "__main__":
     x_val = x_val.reshape(x_val.shape[0], 128, 128, 1)
     x_test = x_test.reshape(x_test.shape[0], 128, 128, 1)
 
-    # encoder.load_weights(cfg.ce_weights)
     autoencoder.load_weights(cfg.ae_weights)

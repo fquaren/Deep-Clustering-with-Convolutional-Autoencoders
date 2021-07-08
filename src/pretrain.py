@@ -42,13 +42,11 @@ def pretrain(
         callbacks=my_callbacks
     )
 
-    autoencoder.save_weights(cfg.ae_weights)
-    encoder.save_weights(cfg.ce_weights)
     # save plot metrics
-    cfg.d_ae['train_loss'] = autoencoder.history.history['loss']
-    cfg.d_ae['val_loss'] = autoencoder.history.history['val_loss']
+    cfg.dict_metrics['pretrain_train_loss'] = autoencoder.history.history['loss']
+    cfg.dict_metrics['pretrain_val_loss'] = autoencoder.history.history['val_loss']
 
-    df = pd.DataFrame(data=cfg.d_ae)
+    df = pd.DataFrame(data=cfg.dict_metrics)
     df.to_csv(
         os.path.join(
             cfg.tables,
@@ -67,7 +65,6 @@ def pretrain(
 
 
 if __name__ == "__main__":
-
     print('EXPERIMENT:', cfg.exp)
     # get datasets
     x_train, y_train = load_dataset('x_train.npy', 'y_train.npy')
@@ -92,19 +89,20 @@ if __name__ == "__main__":
         x_val=x_val,
     )
 
+    # visualization
     viz.plot_pretrain_metrics(
         file=os.path.join(cfg.tables, cfg.exp, 'ae_train.csv'),
         save_dir=os.path.join(cfg.figures, cfg.exp, 'ae'),
     )
     viz.plot_ae_tsne(
         nets.encoder(),
-        cfg.ce_weights,
+        cfg.ae_weights,
         os.path.join(cfg.figures, cfg.exp, 'ae'),
         x_train
     )
     viz.plot_ae_umap(
         nets.encoder(),
-        cfg.ce_weights,
+        cfg.ae_weights,
         os.path.join(cfg.figures, cfg.exp, 'ae'),
         x_train
     )

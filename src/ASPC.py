@@ -20,59 +20,6 @@ class ASPC(object):
         self.y_pred = []
         self.centers = []
 
-    def pretrain(
-        self,
-        x_train,
-        x_val,
-        batch_size=cfg.ae_batch_size,
-        pretrain_epochs=cfg.pretrain_epochs,
-        my_callbacks=cfg.my_callbacks,
-        optim='adam',
-    ):
-
-        train_generator, val_generator = generators(
-            x_train,
-            x_val,
-            cfg.ae_batch_size
-        )
-
-        print('pretraining...')
-        self.autoencoder.summary()
-        self.autoencoder.compile(optimizer=optim, loss='mse')
-
-        # train model
-        self.autoencoder.fit(
-            train_generator,
-            steps_per_epoch=math.ceil(x_train.shape[0] / batch_size),
-            epochs=pretrain_epochs,
-            validation_data=val_generator,
-            validation_steps=math.ceil(x_val.shape[0] / batch_size),
-            callbacks=my_callbacks
-        )
-
-        self.autoencoder.save_weights(cfg.ae_weights)
-        self.encoder.save_weights(cfg.ce_weights)
-        # save plot metrics
-        cfg.d_ae['train_loss'] = autoencoder.history.history['loss']
-        cfg.d_ae['val_loss'] = autoencoder.history.history['val_loss']
-
-        df = pd.DataFrame(data=cfg.d_ae)
-        df.to_csv(
-            os.path.join(
-                cfg.tables,
-                cfg.exp,
-                'ae_train.csv'
-            ),
-            index=False
-        )
-        print('weigths and metrics saved.')
-
-        pred_ae(
-            net=self.autoencoder,
-            weights=cfg.ae_weights,
-            directory=cfg.train_directory,
-        )
-
     def update_labels(self, x, centers):
         """ Update cluster labels.
         :param x: input data, shape=(n_samples, n_features)
@@ -123,7 +70,7 @@ class ASPC(object):
         # for layer in self.encoder.layers[:-2]:
         #     layer.trainable = False
 
-        optim = Adam(learning_rate=1e-5)
+        optim = Adam(learning_rate=1e-7)
         self.encoder.compile(optimizer=optim, loss='mse')
         self.encoder.summary()
 
@@ -131,13 +78,17 @@ class ASPC(object):
         clustering_loss = 0
         y_pred_last = np.copy(self.y_pred)
         tol = 0.001
+        history_loss = []
+        history_val_loss = []
+        history_clustering_loss = []
+        history_val_clustering_loss = []
 
         # finetuning
         for epoch in range(epochs+1):
             if y_train is not None:
-                acc = np.round(metrics.acc(y_train, self.y_pred), 5)
-                nmi = np.round(metrics.nmi(y_train, self.y_pred), 5)
-                print('ACC: {}, NMI: {}'.format(acc, nmi))
+                # acc = np.round(metrics.acc(y_train, self.y_pred), 5)
+                # nmi = np.round(metrics.nmi(y_train, self.y_pred), 5)
+                # print('ACC: {}, NMI: {}'.format(acc, nmi))
 
                 # record the initial result
                 # if epoch == 0:
@@ -152,8 +103,6 @@ class ASPC(object):
                         epoch, delta_y, tol))
                     # print('ASPC model saved to \'%s/model_final.h5\'' % save_dir)
                     # print('-' * 30 + ' END: time=%.1fs ' % (time()-t0) + '-' * 30)
-                    self.encoder.save_weights(os.path.join(
-                        cfg.ae_models, 'final_encoder_weights'))
                     # logfile.close()
                     break
 
@@ -184,11 +133,11 @@ class ASPC(object):
                     monitor='val_loss'
                 )
             )
-            # loss = self.encoder.history.history['loss'][0]
-            # val_loss = self.encoder.history.history['val_loss'][0]
+            loss = self.encoder.history.history['loss'][0]
+            val_loss = self.encoder.history.history['val_loss'][0]
+            history_loss.append(loss)
+            history_val_loss.append(val_loss)
 
-            # self.encoder.save_weights(os.path.join(
-            #     cfg.ae_models, 'final_encoder_weights_epoch_'+str(epoch)))
             # viz.plot_ae_umap(
             #     self.encoder,
             #     os.path.join(cfg.ae_models, 'final_encoder_weights_epoch_'+str(epoch)),
@@ -208,11 +157,30 @@ class ASPC(object):
                 'clustering loss: ', clustering_loss,
                 '\nval clustering loss: ', val_clustering_loss
             )
+            history_clustering_loss.append(clustering_loss)
+            history_val_clustering_loss.append(val_clustering_loss)
 
             # # Step 3: Compute sample weights
             sample_weight = self.compute_sample_weight(losses, epoch, epochs)
             val_sample_weight = self.compute_sample_weight(
                 val_losses, epoch, epochs)
+
+        # Save metrics
+        cfg.dict_metrics['finetuning_train_loss'] = history_loss
+        cfg.dict_metrics['finetuning_val_loss'] = history_val_loss
+        cfg.dict_metrics['clustering_train_loss'] = history_clustering_loss
+        cfg.dict_metrics['clustering_val_loss'] = history_val_clustering_loss
+
+        df = pd.DataFrame(data=cfg.dict_metrics)
+        df.to_csv(
+            os.path.join(
+                cfg.tables,
+                cfg.exp,
+                'encoder_finetuning.csv'
+            ),
+            index=False
+        )
+        print('weigths and metrics saved.')
 
 
 if __name__ == "__main__":
@@ -228,38 +196,35 @@ if __name__ == "__main__":
 
     method = ASPC()
 
-    # method.encoder.load_weights(cfg.ce_weights)
-    # print('pretrained encoder weights are loaded successfully')
+    method.encoder.load_weights(cfg.ae_weights)
+    print('pretrained encoder weights are loaded successfully')
 
-    # print('initial metrics:')
-    # _, _ = init_kmeans(x=x_train, y=y_train, weights=cfg.ce_weights)
-
-    # print('TRAINING')
-    # method.train(x_train=x_train, y_train=y_train, x_val=x_val,
-    #             y_val=y_val, batch_size=16, epochs=1000)
+    print('TRAINING')
+    method.train(x_train=x_train, y_train=y_train, x_val=x_val,
+                 y_val=y_val, batch_size=16, epochs=1000)
 
     print('final metrics:')
-    y_pred, _ = init_kmeans(x=x_test, y=y_test, weights=os.path.join(
-        cfg.ae_models, 'final_encoder_weights'))
+    y_pred, _ = init_kmeans(
+        x=x_test, y=y_test, weights=cfg.final_encoder_weights)
 
     viz.plot_ae_tsne(
         encoder,
-        os.path.join(cfg.ae_models, 'final_encoder_weights'),
+        cfg.final_encoder_weights,
         os.path.join(cfg.figures, cfg.exp),
         x_test
     )
     viz.plot_ae_umap(
         encoder,
-        os.path.join(cfg.ae_models, 'final_encoder_weights'),
+        cfg.final_encoder_weights,
         os.path.join(cfg.figures, cfg.exp),
         x_test
     )
-    
+
     viz.plot_confusion_matrix(y_test, y_pred)
 
-    viz.feature_map(scan=cfg.scans[0], exp=cfg.exp, layer=1, depth=32)
-    viz.feature_map(scan=cfg.scans[1], exp=cfg.exp, layer=1, depth=32)
-    viz.feature_map(scan=cfg.scans[2], exp=cfg.exp, layer=1, depth=32)
-    viz.feature_map(scan=cfg.scans[0], exp=cfg.exp, layer=2, depth=64)
-    viz.feature_map(scan=cfg.scans[1], exp=cfg.exp, layer=2, depth=64)
-    viz.feature_map(scan=cfg.scans[2], exp=cfg.exp, layer=2, depth=64)
+    # viz.feature_map(scan=cfg.scans[0], exp=cfg.exp, layer=1, depth=32, weights=cfg.final_encoder_weights)
+    # viz.feature_map(scan=cfg.scans[1], exp=cfg.exp, layer=1, depth=32, weights=cfg.final_encoder_weights)
+    # viz.feature_map(scan=cfg.scans[2], exp=cfg.exp, layer=1, depth=32, weights=cfg.final_encoder_weights)
+    # viz.feature_map(scan=cfg.scans[0], exp=cfg.exp, layer=2, depth=64, weights=cfg.final_encoder_weights)
+    # viz.feature_map(scan=cfg.scans[1], exp=cfg.exp, layer=2, depth=64, weights=cfg.final_encoder_weights)
+    # viz.feature_map(scan=cfg.scans[2], exp=cfg.exp, layer=2, depth=64, weights=cfg.final_encoder_weights)

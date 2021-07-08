@@ -21,7 +21,7 @@ import math
 from scipy.spatial import Voronoi, voronoi_plot_2d
 
 
-def plot_ae_tsne(encoder, ce_weights, figures, dataset, epoch=''):
+def plot_ae_tsne(encoder, weights, figures, dataset, epoch=''):
 
     """
     parameters:
@@ -34,7 +34,7 @@ def plot_ae_tsne(encoder, ce_weights, figures, dataset, epoch=''):
     Loads the model weigths from models directory, predicts model output,
     perfoms kmeans and tsne and plots result.
     """
-    encoder.load_weights(ce_weights)
+    encoder.load_weights(weights)
     kmeans = KMeans(n_clusters=cfg.n_clusters)
     features = encoder.predict(dataset)
     y_pred = kmeans.fit_predict(features)
@@ -55,7 +55,7 @@ def plot_ae_tsne(encoder, ce_weights, figures, dataset, epoch=''):
     print('saved scatter plot ae')
 
 
-def plot_ae_umap(encoder, ce_weights, figures, dataset, epoch=''):
+def plot_ae_umap(encoder, weights, figures, dataset, epoch=''):
     """
     parameters:
     - autoencoder,
@@ -67,7 +67,7 @@ def plot_ae_umap(encoder, ce_weights, figures, dataset, epoch=''):
     Loads the model weigths from models directory, predicts model output,
     perfoms kmeans and tsne and plots result.
     """
-    encoder.load_weights(ce_weights)
+    encoder.load_weights(weights)
     kmeans = KMeans(n_clusters=cfg.n_clusters)
     features = encoder.predict(dataset)
     y_pred = kmeans.fit_predict(features)
@@ -76,18 +76,110 @@ def plot_ae_umap(encoder, ce_weights, figures, dataset, epoch=''):
     reducer.fit(features)
     embedding = reducer.transform(features)
     centers2d = reducer.transform(centers)
-    plt.figure()
+    min_x = min(embedding, key=lambda x: x[0])[0]
+    min_y = min(embedding, key=lambda x: x[1])[1]
+    max_x = max(embedding, key=lambda x: x[0])[0]
+    max_y = max(embedding, key=lambda x: x[1])[1]
+    centers2d = np.append(centers2d, [[999, 999], [-999, 999], [999, -999], [-999, -999]], axis=0)
+
+    vor = Voronoi(centers2d)
+    regions, vertices = voronoi_finite_polygons_2d(vor)
+    # colorize
+    for region in regions:
+        polygon = vertices[region]
+        plt.fill(*zip(*polygon), alpha=0.4)
+    plt.plot(centers2d[:, 0], centers2d[:, 1], 'ko')
+    plt.xlim(min_x - 0.1*(max_x - min_x), max_x + 0.1*(max_x - min_x))
+    plt.ylim(min_y - 0.1*(max_y - min_y), max_y + 0.1*(max_y - min_y))
+
     plt.scatter(embedding[:, 0], embedding[:, 1], c=y_pred, s=20, cmap='brg')
     plt.scatter(centers2d[:, 0], centers2d[:, 1], c='black', s=100)
     plt.savefig(os.path.join(figures, 'umap_encoder_' + epoch))
     print('saved scatter plot ae')
 
 
-def plot_voronoi(centers, y_kmeans): 
-    vor = Voronoi(centers) 
-    voronoi_plot_2d(vor) 
-    plt.scatter(X[:, 0], X[:, 1], c=y_kmeans, s=5, cmap='summer') 
-    plt.show()
+def voronoi_finite_polygons_2d(vor, radius=None):
+    """
+    Reconstruct infinite voronoi regions in a 2D diagram to finite
+    regions.
+
+    Parameters
+    ----------
+    vor : Voronoi
+        Input diagram
+    radius : float, optional
+        Distance to 'points at infinity'.
+
+    Returns
+    -------
+    regions : list of tuples
+        Indices of vertices in each revised Voronoi regions.
+    vertices : list of tuples
+        Coordinates for revised Voronoi vertices. Same as coordinates
+        of input vertices, with 'points at infinity' appended to the
+        end.
+
+    """
+
+    if vor.points.shape[1] != 2:
+        raise ValueError("Requires 2D input")
+
+    new_regions = []
+    new_vertices = vor.vertices.tolist()
+
+    center = vor.points.mean(axis=0)
+    if radius is None:
+        radius = vor.points.ptp().max()
+
+    # Construct a map containing all ridges for a given point
+    all_ridges = {}
+    for (p1, p2), (v1, v2) in zip(vor.ridge_points, vor.ridge_vertices):
+        all_ridges.setdefault(p1, []).append((p2, v1, v2))
+        all_ridges.setdefault(p2, []).append((p1, v1, v2))
+
+    # Reconstruct infinite regions
+    for p1, region in enumerate(vor.point_region):
+        vertices = vor.regions[region]
+
+        if all(v >= 0 for v in vertices):
+            # finite region
+            new_regions.append(vertices)
+            continue
+
+        # reconstruct a non-finite region
+        ridges = all_ridges[p1]
+        new_region = [v for v in vertices if v >= 0]
+
+        for p2, v1, v2 in ridges:
+            if v2 < 0:
+                v1, v2 = v2, v1
+            if v1 >= 0:
+                # finite ridge: already in the region
+                continue
+
+            # Compute the missing endpoint of an infinite ridge
+
+            t = vor.points[p2] - vor.points[p1] # tangent
+            t /= np.linalg.norm(t)
+            n = np.array([-t[1], t[0]])  # normal
+
+            midpoint = vor.points[[p1, p2]].mean(axis=0)
+            direction = np.sign(np.dot(midpoint - center, n)) * n
+            far_point = vor.vertices[v2] + direction * radius
+
+            new_region.append(len(new_vertices))
+            new_vertices.append(far_point.tolist())
+
+        # sort region counterclockwise
+        vs = np.asarray([new_vertices[v] for v in new_region])
+        c = vs.mean(axis=0)
+        angles = np.arctan2(vs[:,1] - c[1], vs[:,0] - c[0])
+        new_region = np.array(new_region)[np.argsort(angles)]
+
+        # finish
+        new_regions.append(new_region.tolist())
+
+    return new_regions, np.asarray(new_vertices)
 
 
 def plot_pretrain_metrics(file, save_dir):
@@ -96,12 +188,12 @@ def plot_pretrain_metrics(file, save_dir):
     them and saves an image in the figures folder.
     '''
     data = pd.read_csv(file)
-    train_loss = data['train_loss']
-    val_loss = data['val_loss']
+    train_loss = data['pretrain_train_loss']
+    val_loss = data['pretrain_val_loss']
     plt.figure()
     plt.plot(train_loss)
     plt.plot(val_loss)
-    plt.title('Loss')
+    plt.title('Pretrain loss')
     plt.xlabel('Epoch')
     plt.legend(['Training loss', 'Validation loss'])
     plt.savefig(os.path.join(save_dir, 'pretrain_metrics'))
@@ -252,11 +344,11 @@ def plot_dataset():
     plt.savefig(os.path.join(cfg.figures, 'dataset', 'scans.svg'))
 
 
-def feature_map(scan, layer, depth, exp):
+def feature_map(scan, layer, depth, exp, weights):
     # load image
     # load network aspc_29_CAE
     encoder = nets.encoder()
-    encoder.load_weights(os.path.join(cfg.models, exp, 'ae', 'ce_weights'))
+    encoder.load_weights(weights)
     model = Model(inputs=encoder.inputs, outputs=encoder.layers[layer].output)
     img = predict.get_image(predict.get_list_per_type(cfg.train_directory, scan), 1)
     img = np.expand_dims(img, axis=-1)

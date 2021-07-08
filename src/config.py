@@ -22,7 +22,7 @@ tables = '/home/fquaren/unimib/tesi/data/tables'
 figures = '/home/fquaren/unimib/tesi/reports/figures'
 experiments = '/home/fquaren/unimib/tesi/experiments'
 
-exp = 'aspc_CAE_BN_32'
+exp = 'ASPC_FINAL'
 
 ae_models = os.path.join(models, exp, 'ae')
 ae_weights = os.path.join(models, exp, 'ae', 'ae_weights')
@@ -39,33 +39,9 @@ my_callbacks = [
         save_best_only=True,
         save_weights_only=True,
         monitor='val_loss'
-    ),
-    # ReduceLROnPlateau(
-    #     monitor='val_loss',
-    #     factor=0.1,
-    #     patience=20,
-    #     verbose=1,
-    #     mode='min'
-    # )
+    )
 ]
 
 
 # Pandas dataframe
-d = {
-    'iteration': [],
-    'train_loss': [],
-    'val_loss': [],
-    'clustering_loss': [],
-    'val_clustering_loss': [],
-    'reconstruction_loss': [],
-    'val_reconstruction_loss': [],
-    'train_acc': [],
-    'val_acc': [],
-    'train_nmi': [],
-    'val_nmi': [],
-}
-
-d_ae = {
-    'train_loss': [],
-    'val_loss': []
-}
+dict_metrics = {}

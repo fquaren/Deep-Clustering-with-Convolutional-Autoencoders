@@ -57,14 +57,55 @@ K.set_image_data_format('channels_last')
 
 # -------------------------------------------------------------------------------------------
 
+def autoencoder(input_shape=(128, 128, 1), filters=[32, 64, 300]):
+
+    input_img = Input(shape=input_shape)
+    init = VarianceScaling(scale=1. / 3., mode='fan_in', distribution='uniform')
+
+    # Encoder
+    x = Conv2D(filters[0], 4, strides=2, padding='same', activation='relu', name='conv1', input_shape=input_shape, kernel_initializer=init)(input_img)
+    x = Conv2D(filters[1], 4, strides=2, padding='same', activation='relu', name='conv2', kernel_initializer=init)(x)
+
+    x = Flatten(name='flatten_1')(x)
+
+    encoded = Dense(units=filters[-1], name='encoded', kernel_initializer=init)(x)
+
+    # Decoder
+    x = Dense(units=32*32*filters[1], activation='relu', kernel_initializer=init)(encoded)
+    x = Reshape((32, 32, filters[1]))(x)
+    x = Conv2DTranspose(filters[0], 4, strides=2, padding='same', name='deconv2', kernel_initializer=init)(x)
+    decoded = Conv2DTranspose(1, 4, strides=2, padding='same', name='deconv1', kernel_initializer=init)(x)
+
+    return Model(inputs=input_img, outputs=decoded, name='CAE'), Model(inputs=input_img, outputs=encoded, name='CE')
+
+
+def encoder(input_shape=(128, 128, 1), filters=[32, 64, 300]):
+
+    input_img = Input(shape=input_shape)
+    init = VarianceScaling(scale=1. / 3., mode='fan_in', distribution='uniform')
+
+    # Encoder
+    x = Conv2D(filters[0], 4, strides=2, padding='same', activation='relu', name='conv1', input_shape=input_shape, kernel_initializer=init)(input_img)
+    x = Conv2D(filters[1], 4, strides=2, padding='same', activation='relu', name='conv2', kernel_initializer=init)(x)
+
+    x = Flatten(name='flatten_1')(x)
+
+    encoded = Dense(units=filters[-1], name='encoded', kernel_initializer=init)(x)
+
+    return Model(inputs=input_img, outputs=encoded, name='CE')
+
+# ----------------------------------------------------------------------------------------------------------------
+
+
 # def autoencoder(input_shape=(128, 128, 1), filters=[32, 300]):
 
 #     input_img = Input(shape=input_shape)
 #     init = VarianceScaling(scale=1. / 3., mode='fan_in', distribution='uniform')
 
 #     # Encoder
-#     x = Conv2D(filters[0], 3, strides=2, padding='same', activation='relu', name='conv1', input_shape=input_shape, kernel_initializer=init)(input_img)
-#     # x = Conv2D(filters[1], 3, strides=2, padding='same', activation='relu', name='conv2', kernel_initializer=init)(x)
+#     x = Conv2D(filters[0], 3, strides=2, padding='same', name='conv1', input_shape=input_shape, kernel_initializer=init)(input_img)
+#     x = BatchNormalization()(x)
+#     x = ReLU(input_shape=x.shape)(x)
 
 #     x = Flatten(name='flatten_1')(x)
 
@@ -73,67 +114,26 @@ K.set_image_data_format('channels_last')
 #     # Decoder
 #     x = Dense(units=64*64*filters[0], activation='relu', kernel_initializer=init)(encoded)
 #     x = Reshape((64, 64, filters[0]))(x)
-#     #x = Conv2DTranspose(filters[0], 4, strides=2, padding='same', activation='relu', name='deconv2', kernel_initializer=init)(x)
-#     decoded = Conv2DTranspose(1, 4, strides=2, padding='same', name='deconv1', kernel_initializer=init)(x)
+#     decoded = Conv2DTranspose(1, 3, strides=2, padding='same', name='deconv1', kernel_initializer=init)(x)
 
 #     return Model(inputs=input_img, outputs=decoded, name='CAE'), Model(inputs=input_img, outputs=encoded, name='CE')
 
 
-# def encoder(input_shape=(128, 128, 1), filters=[32, 64, 300]):
+# def encoder(input_shape=(128, 128, 1), filters=[32, 300]):
 
 #     input_img = Input(shape=input_shape)
 #     init = VarianceScaling(scale=1. / 3., mode='fan_in', distribution='uniform')
 
 #     # Encoder
-#     x = Conv2D(filters[0], 4, strides=2, padding='same', activation='relu', name='conv1', input_shape=input_shape, kernel_initializer=init)(input_img)
-#     x = Conv2D(filters[1], 4, strides=2, padding='same', activation='relu', name='conv2', kernel_initializer=init)(x)
+#     x = Conv2D(filters[0], 3, strides=2, padding='same', name='conv1', input_shape=input_shape, kernel_initializer=init)(input_img)
+#     x = BatchNormalization()(x)
+#     x = ReLU(input_shape=x.shape)(x)
 
 #     x = Flatten(name='flatten_1')(x)
 
 #     encoded = Dense(units=filters[-1], name='encoded', kernel_initializer=init)(x)
 
 #     return Model(inputs=input_img, outputs=encoded, name='CE')
-
-# ----------------------------------------------------------------------------------------------------------------
-
-
-def autoencoder(input_shape=(128, 128, 1), filters=[32, 300]):
-
-    input_img = Input(shape=input_shape)
-    init = VarianceScaling(scale=1. / 3., mode='fan_in', distribution='uniform')
-
-    # Encoder
-    x = Conv2D(filters[0], 3, strides=2, padding='same', name='conv1', input_shape=input_shape, kernel_initializer=init)(input_img)
-    x = BatchNormalization()(x)
-    x = ReLU(input_shape=x.shape)(x)
-
-    x = Flatten(name='flatten_1')(x)
-
-    encoded = Dense(units=filters[-1], name='encoded', kernel_initializer=init)(x)
-
-    # Decoder
-    x = Dense(units=64*64*filters[0], activation='relu', kernel_initializer=init)(encoded)
-    x = Reshape((64, 64, filters[0]))(x)
-    decoded = Conv2DTranspose(1, 4, strides=2, padding='same', name='deconv1', kernel_initializer=init)(x)
-
-    return Model(inputs=input_img, outputs=decoded, name='CAE'), Model(inputs=input_img, outputs=encoded, name='CE')
-
-
-def encoder(input_shape=(128, 128, 1), filters=[32, 300]):
-
-    input_img = Input(shape=input_shape)
-    init = VarianceScaling(scale=1. / 3., mode='fan_in', distribution='uniform')
-
-    # Encoder
-    x = Conv2D(filters[0], 3, strides=2, padding='same', name='conv1', input_shape=input_shape, kernel_initializer=init)(input_img)
-    x = BatchNormalization()(x)
-    x = ReLU(input_shape=x.shape)(x)
-
-    x = Flatten(name='flatten_1')(x)
-
-    encoded = Dense(units=filters[-1], name='encoded', kernel_initializer=init)(x)
-
-    return Model(inputs=input_img, outputs=encoded, name='CE')
 
 
 if __name__ == "__main__":
