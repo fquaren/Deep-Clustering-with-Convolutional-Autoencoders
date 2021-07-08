@@ -106,4 +106,10 @@ if __name__ == "__main__":
         x_train,
         x_test
     )
+    viz.feature_map(scan=cfg.scans[0], exp=cfg.exp, layer=1, depth=32, weights=cfg.ae_weights)
+    viz.feature_map(scan=cfg.scans[1], exp=cfg.exp, layer=1, depth=32, weights=cfg.ae_weights)
+    viz.feature_map(scan=cfg.scans[2], exp=cfg.exp, layer=1, depth=32, weights=cfg.ae_weights)
+    viz.feature_map(scan=cfg.scans[0], exp=cfg.exp, layer=2, depth=64, weights=cfg.ae_weights)
+    viz.feature_map(scan=cfg.scans[1], exp=cfg.exp, layer=2, depth=64, weights=cfg.ae_weights)
+    viz.feature_map(scan=cfg.scans[2], exp=cfg.exp, layer=2, depth=64, weights=cfg.ae_weights)
     print('plots pretrain done.')

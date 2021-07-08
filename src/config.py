@@ -56,7 +56,13 @@ kmeans = KMeans(
 # random state 3 -> 
 
 # Pandas dataframe
-dict_metrics = {}
+dict_metrics = {
+    'train_acc': [],
+    'val_acc': [],
+    'train_nmi': [],
+    'val_nmi': [],
+}
+
 random_state_acc = {
     'random_state': [],
     'acc': [],

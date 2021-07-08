@@ -120,31 +120,26 @@ class ASPC(object):
         history_val_loss = []
         history_clustering_loss = []
         history_val_clustering_loss = []
+        
         # finetuning
         for epoch in range(epochs+1):
             if y_train is not None:
-                # acc = np.round(metrics.acc(y_train, self.y_pred), 5)
-                # nmi = np.round(metrics.nmi(y_train, self.y_pred), 5)
-                print('ACC: {}, NMI: {}'.format(
-                    np.round(metrics.acc(y_train, self.y_pred), 3),
-                    np.round(metrics.nmi(y_train, self.y_pred), 3)
-                    )
-                )
-
-                # record the initial result
-                # if epoch == 0:
-                #     self.model.save_weights(save_dir + '/model_init.h5')
+                acc = np.round(metrics.acc(y_train, self.y_pred), 5)
+                nmi = np.round(metrics.nmi(y_train, self.y_pred), 5)
+                val_acc = np.round(metrics.acc(y_val, self.val_y_pred), 5)
+                val_nmi = np.round(metrics.nmi(y_val, self.val_y_pred), 5)
+                print('ACC: {}, NMI: {}'.format(acc, nmi))
+                cfg.dict_metrics['train_acc'].append(acc)
+                cfg.dict_metrics['train_nmi'].append(nmi)
+                cfg.dict_metrics['val_acc'].append(val_acc)
+                cfg.dict_metrics['val_nmi'].append(val_nmi)
 
                 # check stop criterion
                 delta_y = np.sum(self.y_pred != y_pred_last).astype(
                     np.float32) / self.y_pred.shape[0]
                 y_pred_last = np.copy(self.y_pred)
                 if (epoch > 0 and delta_y < tol) or epoch >= epochs:
-                    print('Training stopped: epoch=%d, delta_label=%.4f, tol=%.4f' % (
-                        epoch, delta_y, tol))
-                    # print('ASPC model saved to \'%s/model_final.h5\'' % save_dir)
-                    # print('-' * 30 + ' END: time=%.1fs ' % (time()-t0) + '-' * 30)
-                    # logfile.close()
+                    print('Training stopped: epoch=%d, delta_label=%.4f, tol=%.4f' % (epoch, delta_y, tol))
                     break
 
             # Step 1: train the network
@@ -283,13 +278,13 @@ if __name__ == "__main__":
             weights=cfg.final_encoder_weights,
         )
 
-    # viz.plot_ae_tsne(
-    #     encoder,
-    #     cfg.final_encoder_weights,
-    #     os.path.join(cfg.figures, cfg.exp),
-    #     x_train,
-    #     x_test
-    # )
+    viz.plot_ae_tsne(
+        encoder,
+        cfg.final_encoder_weights,
+        os.path.join(cfg.figures, cfg.exp),
+        x_train,
+        x_test
+    )
     viz.plot_ae_umap(
         encoder,
         cfg.final_encoder_weights,
@@ -298,11 +293,10 @@ if __name__ == "__main__":
         x_test
     )
 
-    # viz.plot_confusion_matrix(y_test, y_test_pred)
+    viz.plot_confusion_matrix(y_test, y_test_pred)
 
-    # viz.feature_map(scan=cfg.scans[0], exp=cfg.exp, layer=1, depth=32, weights=cfg.final_encoder_weights)
-    # viz.feature_map(scan=cfg.scans[1], exp=cfg.exp, layer=1, depth=32, weights=cfg.final_encoder_weights)
-    # viz.feature_map(scan=cfg.scans[2], exp=cfg.exp, layer=1, depth=32, weights=cfg.final_encoder_weights)
-    # viz.feature_map(scan=cfg.scans[0], exp=cfg.exp, layer=2, depth=64, weights=cfg.final_encoder_weights)
-    # viz.feature_map(scan=cfg.scans[1], exp=cfg.exp, layer=2, depth=64, weights=cfg.final_encoder_weights)
-    # viz.feature_map(scan=cfg.scans[2], exp=cfg.exp, layer=2, depth=64, weights=cfg.final_encoder_weights)
+    viz.plot_finetuning_metrics(
+        os.path.join(cfg.tables, cfg.exp, 'encoder_finetuning.csv'),
+        os.path.join(cfg.figures, cfg.exp)
+        )
+

@@ -1,19 +1,15 @@
 import os
 from sklearn.manifold import TSNE
-from sklearn.cluster import KMeans
 from sklearn.metrics import confusion_matrix
 from keras.models import Model
 import numpy as np
 from matplotlib import pyplot as plt
 from scipy.optimize import linear_sum_assignment as linear_assignment
 import seaborn as sns
-from tqdm import tqdm
 import pandas as pd
 import config as cfg
 from build_and_save_features import load_dataset
-from metrics import acc, nmi
 import nets
-from mpl_toolkits.mplot3d import Axes3D
 import umap
 import predict
 import random
@@ -22,7 +18,6 @@ from scipy.spatial import Voronoi
 
 
 def plot_ae_tsne(encoder, weights, figures, dataset, test_dataset, epoch=''):
-
     """
     parameters:
     - autoencoder,
@@ -43,7 +38,8 @@ def plot_ae_tsne(encoder, weights, figures, dataset, test_dataset, epoch=''):
     plt.figure()
     tsne = TSNE(n_components=2, perplexity=50, n_iter=3000)
     embedding = tsne.fit_transform(test_features)
-    plt.scatter(embedding[:, 0], embedding[:, 1], c=y_test_pred, s=20, cmap='brg')
+    plt.scatter(embedding[:, 0], embedding[:, 1],
+                c=y_test_pred, s=20, cmap='brg')
     plt.savefig(os.path.join(figures, 'tsne_encoder_' + epoch))
 
     print('saved scatter plot ae')
@@ -76,7 +72,8 @@ def plot_ae_umap(encoder, weights, figures, train_dataset, dataset, epoch=''):
     min_y = min(test_embedding, key=lambda x: x[1])[1]
     max_x = max(test_embedding, key=lambda x: x[0])[0]
     max_y = max(test_embedding, key=lambda x: x[1])[1]
-    centers2d = np.append(centers2d, [[999, 999], [-999, 999], [999, -999], [-999, -999]], axis=0)
+    centers2d = np.append(
+        centers2d, [[999, 999], [-999, 999], [999, -999], [-999, -999]], axis=0)
 
     vor = Voronoi(centers2d)
     regions, vertices = voronoi_finite_polygons_2d(vor)
@@ -84,7 +81,7 @@ def plot_ae_umap(encoder, weights, figures, train_dataset, dataset, epoch=''):
     for region in regions:
         polygon = vertices[region]
         plt.fill(*zip(*polygon), alpha=0.4)
-    plt.scatter(test_embedding[:, 0], test_embedding[:, 1], c=y_test_pred, s=20, cmap='brg')
+    plt.scatter(test_embedding[:, 0], test_embedding[:,1], c=y_test_pred, s=20, cmap='brg')
     plt.scatter(centers2d[:, 0], centers2d[:, 1], c='black', s=100)
     plt.xlim((min_x - 1, max_x + 1))
     plt.ylim((min_y - 1, max_y + 1))
@@ -153,7 +150,7 @@ def voronoi_finite_polygons_2d(vor, radius=None):
 
             # Compute the missing endpoint of an infinite ridge
 
-            t = vor.points[p2] - vor.points[p1] # tangent
+            t = vor.points[p2] - vor.points[p1]  # tangent
             t /= np.linalg.norm(t)
             n = np.array([-t[1], t[0]])  # normal
 
@@ -167,7 +164,7 @@ def voronoi_finite_polygons_2d(vor, radius=None):
         # sort region counterclockwise
         vs = np.asarray([new_vertices[v] for v in new_region])
         c = vs.mean(axis=0)
-        angles = np.arctan2(vs[:,1] - c[1], vs[:,0] - c[0])
+        angles = np.arctan2(vs[:, 1] - c[1], vs[:, 0] - c[0])
         new_region = np.array(new_region)[np.argsort(angles)]
 
         # finish
@@ -193,30 +190,28 @@ def plot_pretrain_metrics(file, save_dir):
     plt.savefig(os.path.join(save_dir, 'pretrain_metrics'))
 
 
-def plot_train_metrics(file, save_dir):
+def plot_finetuning_metrics(file, save_dir):
     '''
     This function read a csv file containing the training metrics, plots them
     and saves an image in the figures folder.
     '''
     data = pd.read_csv(file)
 
-    ite = data['iteration']
-    train_loss = data['train_loss']
-    val_loss = data['val_loss']
-    clust_loss = data['clustering_loss']
-    val_clust_loss = data['val_clustering_loss']
-    rec_loss = data['reconstruction_loss']
-    val_rec_loss = data['val_reconstruction_loss']
+    train_loss = data['finetuning_train_loss']
+    val_loss = data['finetuning_val_loss']
+    clust_loss = data['clustering_train_loss']
+    val_clust_loss = data['clustering_val_loss']
+
     train_acc = data['train_acc']
     val_acc = data['val_acc']
     train_nmi = data['train_nmi']
     val_nmi = data['val_nmi']
-    train_ari = data['train_ari']
-    val_ari = data['val_ari']
+
+    ite = range(len(train_loss))
 
     # losses
     plt.figure(figsize=(30, 10))
-    plt.subplot(1, 3, 1)
+    plt.subplot(1, 2, 1)
     x1 = ite
     y1 = train_loss
     y2 = val_loss
@@ -227,7 +222,7 @@ def plot_train_metrics(file, save_dir):
     plt.xlabel('Epoch')
     plt.legend(['Train', 'Validation'])
 
-    plt.subplot(1, 3, 2)
+    plt.subplot(1, 2, 2)
     x1 = ite
     y1 = clust_loss
     y2 = val_clust_loss
@@ -237,33 +232,22 @@ def plot_train_metrics(file, save_dir):
     plt.ylabel('Loss')
     plt.xlabel('Epoch')
     plt.legend(['Train', 'Validation'])
-
-    plt.subplot(1, 3, 3)
-    x1 = ite
-    y1 = rec_loss
-    y2 = val_rec_loss
-    plt.plot(x1, y1)
-    plt.plot(x1, y2)
-    plt.title('Lr: reconstruction loss')
-    plt.ylabel('Loss')
-    plt.xlabel('Epoch')
-    plt.legend(['Train', 'Validation'])
-    plt.savefig(os.path.join(save_dir, 'train_val_loss'))
+    plt.savefig(os.path.join(save_dir, 'finetuning_loss.svg'))
 
     # other metrics
-    plt.figure(figsize=(30, 10))
-    plt.subplot(1, 3, 1)
+    plt.figure(figsize=(20, 10))
+    plt.subplot(1, 2, 1)
     x1 = ite
     y1 = train_acc
     y2 = val_acc
     plt.plot(x1, y1)
     plt.plot(x1, y2)
     plt.title('Accuracy')
-    plt.ylabel('Acc')
+    plt.ylabel('ACC')
     plt.xlabel('Epoch')
     plt.legend(['Train', 'Validation'])
 
-    plt.subplot(1, 3, 2)
+    plt.subplot(1, 2, 2)
     x1 = ite
     y1 = train_nmi
     y2 = val_nmi
@@ -273,24 +257,10 @@ def plot_train_metrics(file, save_dir):
     plt.ylabel('NMI')
     plt.xlabel('Epoch')
     plt.legend(['Train', 'Validation'])
-
-    plt.subplot(1, 3, 3)
-    x1 = ite
-    y1 = train_ari
-    y2 = val_ari
-    plt.plot(x1, y1)
-    plt.plot(x1, y2)
-    plt.title('ARI')
-    plt.ylabel('ARI')
-    plt.xlabel('Epoch')
-    plt.legend(['Train', 'Validation'])
-    plt.savefig(os.path.join(save_dir, 'train_val_acc_nmi_ari'))
+    plt.savefig(os.path.join(save_dir, 'finetuning_acc_nmi.svg'))
 
 
 def plot_confusion_matrix(y_true, y_pred, save_dir=os.path.join(cfg.figures, cfg.exp)):
-    # matrix = confusion_matrix(
-    #     [int(i) for i in y_true], y_pred)
-
     matrix = confusion_matrix(y_true=y_true, y_pred=y_pred)
 
     plt.figure()
@@ -302,7 +272,7 @@ def plot_confusion_matrix(y_true, y_pred, save_dir=os.path.join(cfg.figures, cfg
 
     D = max(y_pred.max(), y_true.max()) + 1
     w = np.zeros((D, D), dtype=np.int64)
-    
+
     # Confusion matrix.
     for i in range(y_pred.size):
         w[y_pred[i], y_true[i]] += 1
@@ -313,25 +283,27 @@ def plot_confusion_matrix(y_true, y_pred, save_dir=os.path.join(cfg.figures, cfg
 
 
 def plot_dataset():
+    # plots some random images from train directory
     imgs = []
     for i in range(40):
         for scan in cfg.scans:
             n = random.randint(0, 50)
-            imgs.append(predict.get_image(predict.get_list_per_type(cfg.train_directory, scan), n))
+            imgs.append(predict.get_image(
+                predict.get_list_per_type(cfg.train_directory, scan), n))
     random.shuffle(imgs)
-    
-    fig = plt.figure(frameon=False, figsize=(100,100))
-    
+
+    fig = plt.figure(frameon=False, figsize=(100, 100))
+
     k = 10
     columns = k
     rows = k
     ax = []
-    for i in range(1, columns*rows +1):
+    for i in range(1, columns*rows + 1):
         img = imgs[i]
-        ax.append(fig.add_subplot(rows, columns, i))        
+        ax.append(fig.add_subplot(rows, columns, i))
         plt.imshow(img)
         plt.axis('off')
-    
+
     plt.subplots_adjust(wspace=0.1, hspace=0, left=0, right=1, bottom=0, top=1)
 
     os.makedirs(os.path.join(cfg.figures, 'dataset'), exist_ok=True)
@@ -344,12 +316,13 @@ def feature_map(scan, layer, depth, exp, weights):
     encoder = nets.encoder()
     encoder.load_weights(weights)
     model = Model(inputs=encoder.inputs, outputs=encoder.layers[layer].output)
-    img = predict.get_image(predict.get_list_per_type(cfg.train_directory, scan), 1)
+    img = predict.get_image(
+        predict.get_list_per_type(cfg.train_directory, scan), 1)
     img = np.expand_dims(img, axis=-1)
     img = np.expand_dims(img, axis=0)
     feature_maps = model.predict(img)
 
-    fig = plt.figure(frameon=False, figsize=(30,30))
+    plt.figure(frameon=False, figsize=(30, 30))
 
     # plot all
     square = math.sqrt(depth)
@@ -359,7 +332,7 @@ def feature_map(scan, layer, depth, exp, weights):
     for _ in range(square):
         for _ in range(square):
             # specify subplot and turn of axis
-            ax = plt.subplot(square, square, ix)
+            plt.subplot(square, square, ix)
             # plot filter channel in grayscale
             try:
                 plt.imshow(feature_maps[0, :, :, ix-1])
@@ -367,11 +340,14 @@ def feature_map(scan, layer, depth, exp, weights):
                 plt.imshow(np.zeros((feature_maps.shape[1], feature_maps.shape[1]), dtype=np.uint8))
             plt.axis('off')
             ix += 1
-        plt.subplots_adjust(wspace=0.1, hspace=0, left=0, right=1, bottom=0, top=1)
+        plt.subplots_adjust(wspace=0.1, hspace=0, left=0,
+                            right=1, bottom=0, top=1)
     # show the figure
-    
-    os.makedirs(os.path.join(cfg.figures, cfg.exp, 'feature_maps'), exist_ok=True)
-    plt.savefig(os.path.join(cfg.figures, cfg.exp, 'feature_maps', 'conv_layer_' + scan + '_' + str(layer) + '.png'))
+
+    os.makedirs(os.path.join(cfg.figures, cfg.exp,
+                             'feature_maps'), exist_ok=True)
+    plt.savefig(os.path.join(cfg.figures, cfg.exp, 'feature_maps',
+                             'conv_layer_' + scan + '_' + str(layer) + '.svg'))
 
 
 if __name__ == "__main__":
@@ -387,13 +363,13 @@ if __name__ == "__main__":
 
     # autoencoder, encoder = nets.autoencoder(x_test)
 
-    # plot_cae_kmeans( 
-    #     encoder, 
-    #     cfg.ce_weights, 
-    #     os.path.join(cfg.figures, cfg.exp, 'cae'), 
+    # plot_cae_kmeans(
+    #     encoder,
+    #     cfg.ce_weights,
+    #     os.path.join(cfg.figures, cfg.exp, 'cae'),
     #     x_test
     # )
-    
+
     # clustering_layer = ClusteringLayer(
     #     cfg.n_clusters, name='clustering')(encoder.output)
     # model = Model(
