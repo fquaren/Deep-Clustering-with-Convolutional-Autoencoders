@@ -1,5 +1,7 @@
 import os
-from keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
+from keras.callbacks import EarlyStopping, ModelCheckpoint
+from sklearn.cluster import KMeans
+
 
 scans = ['CT', 'MRI', 'PET']
 n_clusters = 3  # len(scans)
@@ -42,6 +44,21 @@ my_callbacks = [
     )
 ]
 
+kmeans = KMeans(
+    n_clusters=n_clusters,
+    n_init=100,
+    #random_state=12
+)
+
+# random state 0 ->
+# random stato 1 -> TEST ACC = 0.0972972972972973; TEST NMI = 0.2990961625065741
+# random state 2 -> VAL ACC = 0.3081081081081081; VAL NMI = 0.2990961625065741
+# random state 3 -> 
 
 # Pandas dataframe
 dict_metrics = {}
+random_state_acc = {
+    'random_state': [],
+    'acc': [],
+    'nmi': [],
+}

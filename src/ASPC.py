@@ -38,25 +38,52 @@ class ASPC(object):
 
     def compute_sample_weight(self, losses, t, T):
         lam = np.mean(losses) + t*np.std(losses) / T
-        return np.where(losses < lam, 1., 0.)
+        weights = np.where(losses < lam, 1., 0.)
+        return weights
 
     def train(self, x_train, y_train, x_val, y_val, epochs, batch_size):
-        # initialization
-        self.y_pred, self.centers = init_kmeans(
-            x=x_train, y=y_train, verbose=True)
-        self.val_y_pred, self.val_centers = init_kmeans(
-            x=x_val, y=y_val, verbose=True)
+        
+        # find best init random state
+        for i in range(100):
+            # print('final metrics:')
+            _, _, _ = init_kmeans(
+                x=x_train,
+                x_val=x_val,
+                y=y_train,
+                y_val=y_val,
+                random_state=i,
+                weights=cfg.ae_weights,
+                verbose=False
+            )
+            # print('RANDOM_STATE', cfg.kmeans.random_state)
+            cfg.random_state_acc['acc'].append(cfg.dict_metrics['val_acc'])
+            cfg.random_state_acc['nmi'].append(cfg.dict_metrics['val_nmi'])
+            cfg.random_state_acc['random_state'].append(i)
+        
+        pass
 
-        # generators
+        # initialization
+        self.y_pred, self.val_y_pred, self.centers = init_kmeans(
+            x=x_train,
+            x_val=x_val,
+            y=y_train,
+            y_val=y_val,
+            random_state=cfg.kmeans.random_state,
+            weights=cfg.ae_weights
+        )
+
+        # weights initialization
         sample_weight = np.ones(shape=x_train.shape[0])
         sample_weight[self.y_pred == -1] = 0
         val_sample_weight = np.ones(shape=x_val.shape[0])
         val_sample_weight[self.val_y_pred == -1] = 0
 
+        # generators
         train_datagen = MyImageGenerator(
             rescale=1./225,
             featurewise_center=True,
             featurewise_std_normalization=True,
+            vertical_flip=True,
         )
         val_datagen = MyImageGenerator(
             rescale=1./225,
@@ -67,10 +94,10 @@ class ASPC(object):
         train_datagen.fit(x_train)
         val_datagen.fit(x_val)
 
-        # for layer in self.encoder.layers[:-2]:
-        #     layer.trainable = False
+        for layer in self.encoder.layers[:-2]:
+            layer.trainable = False
 
-        optim = Adam(learning_rate=1e-7)
+        optim = Adam(learning_rate=1e-5)
         self.encoder.compile(optimizer=optim, loss='mse')
         self.encoder.summary()
 
@@ -82,13 +109,16 @@ class ASPC(object):
         history_val_loss = []
         history_clustering_loss = []
         history_val_clustering_loss = []
-
         # finetuning
         for epoch in range(epochs+1):
             if y_train is not None:
                 # acc = np.round(metrics.acc(y_train, self.y_pred), 5)
                 # nmi = np.round(metrics.nmi(y_train, self.y_pred), 5)
-                # print('ACC: {}, NMI: {}'.format(acc, nmi))
+                print('ACC: {}, NMI: {}'.format(
+                    np.round(metrics.acc(y_train, self.y_pred), 3),
+                    np.round(metrics.nmi(y_train, self.y_pred), 3)
+                    )
+                )
 
                 # record the initial result
                 # if epoch == 0:
@@ -120,7 +150,7 @@ class ASPC(object):
                 validation_data=generator(
                     image_generator=val_datagen,
                     x=x_val,
-                    y=self.val_centers[self.val_y_pred],
+                    y=self.centers[self.val_y_pred],
                     sample_weight=val_sample_weight,
                     batch_size=batch_size,
                     shuffle=False
@@ -150,7 +180,7 @@ class ASPC(object):
             self.y_pred, losses = self.update_labels(
                 self.encoder.predict(x_train), self.centers)
             self.val_y_pred, val_losses = self.update_labels(
-                self.encoder.predict(x_val), self.val_centers)
+                self.encoder.predict(x_val), self.centers)
             clustering_loss = np.mean(losses)
             val_clustering_loss = np.mean(val_losses)
             print(
@@ -162,8 +192,8 @@ class ASPC(object):
 
             # # Step 3: Compute sample weights
             sample_weight = self.compute_sample_weight(losses, epoch, epochs)
-            val_sample_weight = self.compute_sample_weight(
-                val_losses, epoch, epochs)
+            val_sample_weight = self.compute_sample_weight(val_losses, epoch, epochs)
+
 
         # Save metrics
         cfg.dict_metrics['finetuning_train_loss'] = history_loss
@@ -201,26 +231,52 @@ if __name__ == "__main__":
 
     print('TRAINING')
     method.train(x_train=x_train, y_train=y_train, x_val=x_val,
-                 y_val=y_val, batch_size=16, epochs=1000)
+                 y_val=y_val, batch_size=16, epochs=10)
 
-    print('final metrics:')
-    y_pred, _ = init_kmeans(
-        x=x_test, y=y_test, weights=cfg.final_encoder_weights)
+    _, y_test_pred, _ = init_kmeans(
+            x=x_train,
+            x_val=x_test,
+            y=y_train,
+            y_val=y_test,
+            random_state=cfg.kmeans.random_state,
+            weights=cfg.final_encoder_weights,
+        )
+    
+    # for i in range(100):
+    #     # print('final metrics:')
+    #     _, y_test_pred, _ = init_kmeans(
+    #         x=x_train, x_val=x_test, y=y_train, y_val=y_test, random_state=i, weights=cfg.final_encoder_weights, verbose=False)
+    #     # print('RANDOM_STATE', cfg.kmeans.random_state)
+    #     cfg.random_state_acc['test_acc'].append(cfg.dict_metrics['val_acc'])
+    #     cfg.random_state_acc['test_nmi'].append(cfg.dict_metrics['val_nmi'])
+    #     cfg.random_state_acc['random_state'].append(i)
+
+    # df = pd.DataFrame(data=cfg.random_state_acc)
+    # df.to_csv(
+    #     os.path.join(
+    #         cfg.tables,
+    #         cfg.exp,
+    #         'random_state_acc.csv'
+    #     ),
+    #     index=False
+    # )
 
     viz.plot_ae_tsne(
         encoder,
         cfg.final_encoder_weights,
         os.path.join(cfg.figures, cfg.exp),
+        x_train,
         x_test
     )
     viz.plot_ae_umap(
         encoder,
         cfg.final_encoder_weights,
         os.path.join(cfg.figures, cfg.exp),
+        x_train,
         x_test
     )
 
-    viz.plot_confusion_matrix(y_test, y_pred)
+    viz.plot_confusion_matrix(y_test, y_test_pred)
 
     # viz.feature_map(scan=cfg.scans[0], exp=cfg.exp, layer=1, depth=32, weights=cfg.final_encoder_weights)
     # viz.feature_map(scan=cfg.scans[1], exp=cfg.exp, layer=1, depth=32, weights=cfg.final_encoder_weights)

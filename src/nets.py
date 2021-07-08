@@ -68,7 +68,7 @@ def autoencoder(input_shape=(128, 128, 1), filters=[32, 64, 300]):
 
     x = Flatten(name='flatten_1')(x)
 
-    encoded = Dense(units=filters[-1], name='encoded', kernel_initializer=init)(x)
+    encoded = Dense(units=filters[-1], name='encoded', activation='relu', kernel_initializer=init)(x)
 
     # Decoder
     x = Dense(units=32*32*filters[1], activation='relu', kernel_initializer=init)(encoded)

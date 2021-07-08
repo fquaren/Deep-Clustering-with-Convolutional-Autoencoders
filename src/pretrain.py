@@ -13,7 +13,6 @@ from generators import generators
 
 def pretrain(
     autoencoder,
-    encoder,
     x_train,
     x_val,
     batch_size=cfg.ae_batch_size,
@@ -76,7 +75,7 @@ if __name__ == "__main__":
     os.makedirs(os.path.join(cfg.figures, cfg.exp, 'ae'), exist_ok=True)
     os.makedirs(os.path.join(cfg.models, cfg.exp, 'ae'), exist_ok=True)
 
-    autoencoder, encoder = nets.autoencoder()
+    autoencoder, _ = nets.autoencoder()
     x_train = x_train.reshape(x_train.shape[0], 128, 128, 1)
     x_val = x_val.reshape(x_val.shape[0], 128, 128, 1)
     x_test = x_test.reshape(x_test.shape[0], 128, 128, 1)
@@ -84,7 +83,6 @@ if __name__ == "__main__":
     # pretrain
     pretrain(
         autoencoder=autoencoder,
-        encoder=encoder,
         x_train=x_train,
         x_val=x_val,
     )
@@ -98,12 +96,14 @@ if __name__ == "__main__":
         nets.encoder(),
         cfg.ae_weights,
         os.path.join(cfg.figures, cfg.exp, 'ae'),
-        x_train
+        x_train,
+        x_test
     )
     viz.plot_ae_umap(
         nets.encoder(),
         cfg.ae_weights,
         os.path.join(cfg.figures, cfg.exp, 'ae'),
-        x_train
+        x_train,
+        x_test
     )
     print('plots pretrain done.')

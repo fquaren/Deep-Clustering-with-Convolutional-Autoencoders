@@ -18,10 +18,10 @@ import umap
 import predict
 import random
 import math
-from scipy.spatial import Voronoi, voronoi_plot_2d
+from scipy.spatial import Voronoi
 
 
-def plot_ae_tsne(encoder, weights, figures, dataset, epoch=''):
+def plot_ae_tsne(encoder, weights, figures, dataset, test_dataset, epoch=''):
 
     """
     parameters:
@@ -35,27 +35,21 @@ def plot_ae_tsne(encoder, weights, figures, dataset, epoch=''):
     perfoms kmeans and tsne and plots result.
     """
     encoder.load_weights(weights)
-    kmeans = KMeans(n_clusters=cfg.n_clusters)
+    kmeans = cfg.kmeans
     features = encoder.predict(dataset)
-    y_pred = kmeans.fit_predict(features)
-    # centers3d = kmeans.cluster_centers_.astype(np.float32)
-    # fig = plt.figure()
-    # ax = Axes3D(fig)
-    # ax.scatter(features[:, 0], features[:, 1], features[:, 2], c=y_pred, cmap='brg')
-    # ax.scatter(centers3d[0], centers3d[1], centers3d[2], c='black')
-    # plt.savefig(os.path.join(figures, 'kmeans_ae_' + epoch))
+    _ = kmeans.fit_predict(features)
+    test_features = encoder.predict(test_dataset)
+    y_test_pred = kmeans.predict(test_features)
     plt.figure()
     tsne = TSNE(n_components=2, perplexity=50, n_iter=3000)
-    embedding = tsne.fit_transform(features)
-    # centers2d = tsne.fit_transform(centers3d)
-    plt.scatter(embedding[:, 0], embedding[:, 1], c=y_pred, s=20, cmap='brg')
-    # plt.scatter(centers2d[0], centers2d[1], c='black')
+    embedding = tsne.fit_transform(test_features)
+    plt.scatter(embedding[:, 0], embedding[:, 1], c=y_test_pred, s=20, cmap='brg')
     plt.savefig(os.path.join(figures, 'tsne_encoder_' + epoch))
 
     print('saved scatter plot ae')
 
 
-def plot_ae_umap(encoder, weights, figures, dataset, epoch=''):
+def plot_ae_umap(encoder, weights, figures, train_dataset, dataset, epoch=''):
     """
     parameters:
     - autoencoder,
@@ -68,18 +62,20 @@ def plot_ae_umap(encoder, weights, figures, dataset, epoch=''):
     perfoms kmeans and tsne and plots result.
     """
     encoder.load_weights(weights)
-    kmeans = KMeans(n_clusters=cfg.n_clusters)
-    features = encoder.predict(dataset)
-    y_pred = kmeans.fit_predict(features)
+    kmeans = cfg.kmeans
+    features = encoder.predict(train_dataset)
+    _ = kmeans.fit_predict(features)
     centers = kmeans.cluster_centers_.astype(np.float32)
+    test_features = encoder.predict(dataset)
+    y_test_pred = kmeans.predict(test_features)
     reducer = umap.UMAP()
     reducer.fit(features)
-    embedding = reducer.transform(features)
+    test_embedding = reducer.transform(test_features)
     centers2d = reducer.transform(centers)
-    min_x = min(embedding, key=lambda x: x[0])[0]
-    min_y = min(embedding, key=lambda x: x[1])[1]
-    max_x = max(embedding, key=lambda x: x[0])[0]
-    max_y = max(embedding, key=lambda x: x[1])[1]
+    min_x = min(test_embedding, key=lambda x: x[0])[0]
+    min_y = min(test_embedding, key=lambda x: x[1])[1]
+    max_x = max(test_embedding, key=lambda x: x[0])[0]
+    max_y = max(test_embedding, key=lambda x: x[1])[1]
     centers2d = np.append(centers2d, [[999, 999], [-999, 999], [999, -999], [-999, -999]], axis=0)
 
     vor = Voronoi(centers2d)
@@ -89,10 +85,10 @@ def plot_ae_umap(encoder, weights, figures, dataset, epoch=''):
         polygon = vertices[region]
         plt.fill(*zip(*polygon), alpha=0.4)
     plt.plot(centers2d[:, 0], centers2d[:, 1], 'ko')
-    plt.xlim(min_x - 0.1*(max_x - min_x), max_x + 0.1*(max_x - min_x))
-    plt.ylim(min_y - 0.1*(max_y - min_y), max_y + 0.1*(max_y - min_y))
+    plt.xlim((min_x - 1, max_x + 1))
+    plt.ylim((min_y - 1, max_y + 1))
 
-    plt.scatter(embedding[:, 0], embedding[:, 1], c=y_pred, s=20, cmap='brg')
+    plt.scatter(test_embedding[:, 0], test_embedding[:, 1], c=y_test_pred, s=20, cmap='brg')
     plt.scatter(centers2d[:, 0], centers2d[:, 1], c='black', s=100)
     plt.savefig(os.path.join(figures, 'umap_encoder_' + epoch))
     print('saved scatter plot ae')
