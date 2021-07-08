@@ -126,13 +126,7 @@ class ASPC(object):
             if y_train is not None:
                 acc = np.round(metrics.acc(y_train, self.y_pred), 5)
                 nmi = np.round(metrics.nmi(y_train, self.y_pred), 5)
-                val_acc = np.round(metrics.acc(y_val, self.val_y_pred), 5)
-                val_nmi = np.round(metrics.nmi(y_val, self.val_y_pred), 5)
                 print('ACC: {}, NMI: {}'.format(acc, nmi))
-                cfg.dict_metrics['train_acc'].append(acc)
-                cfg.dict_metrics['train_nmi'].append(nmi)
-                cfg.dict_metrics['val_acc'].append(val_acc)
-                cfg.dict_metrics['val_nmi'].append(val_nmi)
 
                 # check stop criterion
                 delta_y = np.sum(self.y_pred != y_pred_last).astype(
@@ -174,13 +168,13 @@ class ASPC(object):
             history_loss.append(loss)
             history_val_loss.append(val_loss)
 
-            # viz.plot_ae_umap(
-            #     self.encoder,
-            #     os.path.join(cfg.ae_models, 'final_encoder_weights_epoch_'+str(epoch)),
-            #     os.path.join(cfg.figures, cfg.exp),
-            #     x_test,
-            #     epoch=str(epoch)
-            # )
+            viz.plot_ae_umap(
+                self.encoder,
+                os.path.join(cfg.ae_models, 'final_encoder_weights_epoch_'+str(epoch)),
+                os.path.join(cfg.figures, cfg.exp),
+                x_test,
+                epoch=str(epoch)
+            )
 
             # Step 2: update labels
             self.y_pred, losses = self.update_labels(
@@ -239,64 +233,75 @@ if __name__ == "__main__":
     # method.train(x_train=x_train, y_train=y_train, x_val=x_val,
     #              y_val=y_val, batch_size=16, epochs=10)
 
-    # # find best init for test
-    # for i in range(20):
-    #     # print('final metrics:')
-    #     _, y_test_pred, _ = init_kmeans(
-    #         x=x_train, x_val=x_test, y=y_train, y_val=y_test, random_state=i, weights=cfg.final_encoder_weights, verbose=False)
-    #     # print('RANDOM_STATE', cfg.kmeans.random_state)
-    #     cfg.final_random_state_acc['test_acc'].append(cfg.dict_metrics['val_acc'])
-    #     cfg.final_random_state_acc['test_nmi'].append(cfg.dict_metrics['val_nmi'])
-    #     cfg.final_random_state_acc['random_state'].append(i)
+    # find best init for test
+    for i in range(20):
+        # print('final metrics:')
+        _, y_test_pred, _ = init_kmeans(
+            x=x_train, x_val=x_test, y=y_train, y_val=y_test, random_state=i, weights=cfg.final_encoder_weights, verbose=False)
+        # print('RANDOM_STATE', cfg.kmeans.random_state)
+        cfg.random_state_acc['acc'].append(cfg.dict_metrics['val_acc'])
+        cfg.random_state_acc['nmi'].append(cfg.dict_metrics['val_nmi'])
+        cfg.random_state_acc['random_state'].append(i)
 
-    # df = pd.DataFrame(data=cfg.final_random_state_acc)
-    # df = df.sort_values(by='test_acc', ascending=False)
-    # df.to_csv(
-    #     os.path.join(
-    #         cfg.tables,
-    #         cfg.exp,
-    #         'final_random_state_acc.csv'
-    #     ),
-    #     index=False
-    # )
-
-    df = pd.read_csv(os.path.join(
+    df = pd.DataFrame(data=cfg.random_state_acc)
+    df = df.sort_values(by='acc', ascending=False)
+    df.to_csv(
+        os.path.join(
             cfg.tables,
             cfg.exp,
             'final_random_state_acc.csv'
+        ),
+        index=False
+    )
+
+    # df = pd.read_csv(os.path.join(
+    #         cfg.tables,
+    #         cfg.exp,
+    #         'final_random_state_acc.csv'
+    #     )
+    # )
+
+    # best_state = int(df.iloc[0]['random_state'])
+
+    # _, y_test_pred, _ = init_kmeans(
+    #         x=x_train,
+    #         x_val=x_test,
+    #         y=y_train,
+    #         y_val=y_test,
+    #         random_state=best_state,
+    #         weights=cfg.final_encoder_weights,
+    #     )
+
+    # viz.plot_ae_tsne(
+    #     encoder,
+    #     cfg.final_encoder_weights,
+    #     os.path.join(cfg.figures, cfg.exp),
+    #     x_train,
+    #     x_test
+    # )
+    # viz.plot_ae_umap(
+    #     encoder,
+    #     cfg.final_encoder_weights,
+    #     os.path.join(cfg.figures, cfg.exp),
+    #     x_train,
+    #     x_test
+    # )
+
+    # viz.plot_confusion_matrix(y_test, y_test_pred)
+
+    # plot pre-finetuning metrics
+    viz.plot_metrics(
+        os.path.join(cfg.tables, cfg.exp, 'random_state_acc.csv'),
+        os.path.join(cfg.figures, cfg.exp, 'pre_finetuning_acc_nmi.svg')
         )
-    )
 
-    best_state = int(df.iloc[0]['random_state'])
-
-    _, y_test_pred, _ = init_kmeans(
-            x=x_train,
-            x_val=x_test,
-            y=y_train,
-            y_val=y_test,
-            random_state=best_state,
-            weights=cfg.final_encoder_weights,
+    # plot final metrics
+    viz.plot_metrics(
+        os.path.join(cfg.tables, cfg.exp, 'final_random_state_acc.csv'),
+        os.path.join(cfg.figures, cfg.exp, 'finetuning_acc_nmi.svg')
         )
 
-    viz.plot_ae_tsne(
-        encoder,
-        cfg.final_encoder_weights,
-        os.path.join(cfg.figures, cfg.exp),
-        x_train,
-        x_test
-    )
-    viz.plot_ae_umap(
-        encoder,
-        cfg.final_encoder_weights,
-        os.path.join(cfg.figures, cfg.exp),
-        x_train,
-        x_test
-    )
-
-    viz.plot_confusion_matrix(y_test, y_test_pred)
-
-    viz.plot_finetuning_metrics(
+    viz.plot_finetuning_losses(
         os.path.join(cfg.tables, cfg.exp, 'encoder_finetuning.csv'),
         os.path.join(cfg.figures, cfg.exp)
         )
-

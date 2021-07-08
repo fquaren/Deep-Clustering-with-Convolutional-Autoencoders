@@ -190,7 +190,7 @@ def plot_pretrain_metrics(file, save_dir):
     plt.savefig(os.path.join(save_dir, 'pretrain_metrics'))
 
 
-def plot_finetuning_metrics(file, save_dir):
+def plot_finetuning_losses(file, save_dir):
     '''
     This function read a csv file containing the training metrics, plots them
     and saves an image in the figures folder.
@@ -202,15 +202,10 @@ def plot_finetuning_metrics(file, save_dir):
     clust_loss = data['clustering_train_loss']
     val_clust_loss = data['clustering_val_loss']
 
-    train_acc = data['train_acc']
-    val_acc = data['val_acc']
-    train_nmi = data['train_nmi']
-    val_nmi = data['val_nmi']
-
     ite = range(len(train_loss))
 
     # losses
-    plt.figure(figsize=(30, 10))
+    plt.figure()
     plt.subplot(1, 2, 1)
     x1 = ite
     y1 = train_loss
@@ -228,36 +223,40 @@ def plot_finetuning_metrics(file, save_dir):
     y2 = val_clust_loss
     plt.plot(x1, y1)
     plt.plot(x1, y2)
-    plt.title('Lc: clustering loss')
+    plt.title('Clustering loss')
     plt.ylabel('Loss')
     plt.xlabel('Epoch')
     plt.legend(['Train', 'Validation'])
     plt.savefig(os.path.join(save_dir, 'finetuning_loss.svg'))
 
-    # other metrics
-    plt.figure(figsize=(20, 10))
+
+def plot_metrics(file, save_dir):
+    '''
+    This function read a csv file containing the training metrics, plots them
+    and saves an image in the figures folder.
+    '''
+    data = pd.read_csv(file)
+
+    train_acc = data['acc']
+    train_nmi = data['nmi']
+
+    mean_train_acc = np.mean(train_acc)
+    mean_train_nmi = np.mean(train_nmi)
+    std_train_acc = np.std(train_acc)
+    std_train_nmi = np.std(train_nmi)
+
     plt.subplot(1, 2, 1)
-    x1 = ite
-    y1 = train_acc
-    y2 = val_acc
-    plt.plot(x1, y1)
-    plt.plot(x1, y2)
-    plt.title('Accuracy')
+    plt.errorbar(1, mean_train_acc, yerr=std_train_acc, fmt='o')
+    plt.title('Pre finetuting accuracy')
     plt.ylabel('ACC')
-    plt.xlabel('Epoch')
-    plt.legend(['Train', 'Validation'])
+    plt.legend('Train')
 
     plt.subplot(1, 2, 2)
-    x1 = ite
-    y1 = train_nmi
-    y2 = val_nmi
-    plt.plot(x1, y1)
-    plt.plot(x1, y2)
-    plt.title('NMI')
+    plt.errorbar(1, mean_train_nmi, yerr=std_train_nmi, fmt='o')
+    plt.title('Pre finetuting NMI')
     plt.ylabel('NMI')
-    plt.xlabel('Epoch')
-    plt.legend(['Train', 'Validation'])
-    plt.savefig(os.path.join(save_dir, 'finetuning_acc_nmi.svg'))
+    plt.legend('Train')
+    plt.savefig(os.path.join(save_dir))
 
 
 def plot_confusion_matrix(y_true, y_pred, save_dir=os.path.join(cfg.figures, cfg.exp)):

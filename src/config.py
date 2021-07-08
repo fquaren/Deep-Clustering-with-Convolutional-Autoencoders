@@ -50,27 +50,12 @@ kmeans = KMeans(
     random_state=0
 )
 
-# random state 0 ->
-# random stato 1 -> TEST ACC = 0.0972972972972973; TEST NMI = 0.2990961625065741
-# random state 2 -> VAL ACC = 0.3081081081081081; VAL NMI = 0.2990961625065741
-# random state 3 -> 
-
 # Pandas dataframe
-dict_metrics = {
-    'train_acc': [],
-    'val_acc': [],
-    'train_nmi': [],
-    'val_nmi': [],
-}
+dict_metrics = {}
+
 
 random_state_acc = {
     'random_state': [],
     'acc': [],
     'nmi': [],
-}
-
-final_random_state_acc = {
-    'random_state': [],
-    'test_acc': [],
-    'test_nmi': [],
 }
