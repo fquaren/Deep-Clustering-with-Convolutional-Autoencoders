@@ -43,6 +43,7 @@ def pred_ae(net, weights, directory, exp=cfg.exp, n=random.randint(0, 10), scans
         os.makedirs(os.path.join(figures, exp, 'ae'), exist_ok=True)
         plt.savefig(os.path.join(figures, exp, 'ae', scan+'_ae_pred.png'))
     print('Prediction on test images done.')
+    plt.close()
 
 
 def init_kmeans(x, x_val, y, y_val, random_state, weights, n_clusters=3, verbose=True):
@@ -50,7 +51,6 @@ def init_kmeans(x, x_val, y, y_val, random_state, weights, n_clusters=3, verbose
     encoder.load_weights(weights)
     kmeans = cfg.kmeans
     kmeans.random_state = random_state
-    print('RANDOM STATE', random_state)
     embedding = encoder.predict(x)
     y_pred = kmeans.fit_predict(embedding)
     centers = kmeans.cluster_centers_

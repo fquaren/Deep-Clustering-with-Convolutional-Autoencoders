@@ -43,36 +43,39 @@ class ASPC(object):
 
     def train(self, x_train, y_train, x_val, y_val, epochs, batch_size):
 
-        # find best init random state
-        for i in range(20):
-            # print('final metrics:')
-            _, _, _ = init_kmeans(
-                x=x_train,
-                x_val=x_val,
-                y=y_train,
-                y_val=y_val,
-                random_state=i,
-                weights=cfg.ae_weights,
-                verbose=False
-            )
-            print('RANDOM_STATE', cfg.kmeans.random_state)
-            cfg.random_state_acc['acc'].append(cfg.dict_metrics['val_acc'])
-            cfg.random_state_acc['nmi'].append(cfg.dict_metrics['val_nmi'])
-            cfg.random_state_acc['random_state'].append(i)
-        
-        df = pd.DataFrame(data=cfg.random_state_acc)
-        df.to_csv(
-            os.path.join(
-                cfg.tables,
-                cfg.exp,
-                'random_state_acc.csv'
-            ),
-            index=False
-        )
+        # # find best init random state
+        # for i in range(20):
+        #     # print('final metrics:')
+        #     _, _, _ = init_kmeans(
+        #         x=x_train,
+        #         x_val=x_val,
+        #         y=y_train,
+        #         y_val=y_val,
+        #         random_state=i,
+        #         weights=cfg.ae_weights,
+        #         verbose=False
+        #     )
+        #     print('RANDOM STATE', cfg.kmeans.random_state)
+        #     cfg.random_state_acc['acc'].append(cfg.dict_metrics['val_acc'])
+        #     cfg.random_state_acc['nmi'].append(cfg.dict_metrics['val_nmi'])
+        #     cfg.random_state_acc['random_state'].append(i)
 
-        df = df.sort_values(by='acc', ascending=False)
-        best_state = int(df.iloc[0]['random_state'])
-        
+        # df = pd.DataFrame(data=cfg.random_state_acc)
+        # df.to_csv(
+        #     os.path.join(
+        #         cfg.tables,
+        #         cfg.exp,
+        #         'random_state_acc.csv'
+        #     ),
+        #     index=False
+        # )
+
+        # df = df.sort_values(by='acc', ascending=False)
+        # best_state = int(df.iloc[0]['random_state'])
+        best_state = None
+        # print('BEST STATE', best_state)
+
+
         # initialization
         self.y_pred, self.val_y_pred, self.centers = init_kmeans(
             x=x_train,
@@ -94,7 +97,6 @@ class ASPC(object):
             rescale=1./225,
             featurewise_center=True,
             featurewise_std_normalization=True,
-            vertical_flip=True,
         )
         val_datagen = MyImageGenerator(
             rescale=1./225,
@@ -108,7 +110,7 @@ class ASPC(object):
         for layer in self.encoder.layers[:-2]:
             layer.trainable = False
 
-        optim = Adam(learning_rate=1e-6)
+        optim = Adam(learning_rate=1e-5)
         self.encoder.compile(optimizer=optim, loss='mse')
         self.encoder.summary()
 
@@ -120,7 +122,7 @@ class ASPC(object):
         history_val_loss = []
         history_clustering_loss = []
         history_val_clustering_loss = []
-        
+
         # finetuning
         for epoch in range(epochs+1):
             if y_train is not None:
@@ -168,13 +170,16 @@ class ASPC(object):
             history_loss.append(loss)
             history_val_loss.append(val_loss)
 
-            viz.plot_ae_umap(
-                self.encoder,
-                os.path.join(cfg.ae_models, 'final_encoder_weights_epoch_'+str(epoch)),
-                os.path.join(cfg.figures, cfg.exp),
-                x_test,
-                epoch=str(epoch)
-            )
+            # TODO add saving of weights every epoch to plot umaps
+            # viz.plot_ae_umap(
+            #     self.encoder,
+            #     os.path.join(
+            #         cfg.ae_models, 'final_encoder_weights_epoch_'+str(epoch)),
+            #     os.path.join(cfg.figures, cfg.exp),
+            #     x_train,
+            #     x_test,
+            #     epoch=str(epoch)
+            # )
 
             # Step 2: update labels
             self.y_pred, losses = self.update_labels(
@@ -192,8 +197,8 @@ class ASPC(object):
 
             # # Step 3: Compute sample weights
             sample_weight = self.compute_sample_weight(losses, epoch, epochs)
-            val_sample_weight = self.compute_sample_weight(val_losses, epoch, epochs)
-
+            val_sample_weight = self.compute_sample_weight(
+                val_losses, epoch, epochs)
 
         # Save metrics
         cfg.dict_metrics['finetuning_train_loss'] = history_loss
@@ -226,33 +231,33 @@ if __name__ == "__main__":
 
     method = ASPC()
 
-    # method.encoder.load_weights(cfg.ae_weights)
-    # print('pretrained encoder weights are loaded successfully')
+    method.encoder.load_weights(cfg.ae_weights)
+    print('pretrained encoder weights are loaded successfully')
 
-    # print('TRAINING')
-    # method.train(x_train=x_train, y_train=y_train, x_val=x_val,
-    #              y_val=y_val, batch_size=16, epochs=10)
+    print('TRAINING')
+    method.train(x_train=x_train, y_train=y_train, x_val=x_val,
+                 y_val=y_val, batch_size=16, epochs=10)
 
     # find best init for test
-    for i in range(20):
-        # print('final metrics:')
-        _, y_test_pred, _ = init_kmeans(
-            x=x_train, x_val=x_test, y=y_train, y_val=y_test, random_state=i, weights=cfg.final_encoder_weights, verbose=False)
-        # print('RANDOM_STATE', cfg.kmeans.random_state)
-        cfg.random_state_acc['acc'].append(cfg.dict_metrics['val_acc'])
-        cfg.random_state_acc['nmi'].append(cfg.dict_metrics['val_nmi'])
-        cfg.random_state_acc['random_state'].append(i)
+    # for i in range(20):
+    #     # print('final metrics:')
+    #     _, y_test_pred, _ = init_kmeans(
+    #         x=x_train, x_val=x_test, y=y_train, y_val=y_test, random_state=i, weights=cfg.final_encoder_weights, verbose=False)
+    #     # print('RANDOM_STATE', cfg.kmeans.random_state)
+    #     cfg.random_state_acc['acc'].append(cfg.dict_metrics['val_acc'])
+    #     cfg.random_state_acc['nmi'].append(cfg.dict_metrics['val_nmi'])
+    #     cfg.random_state_acc['random_state'].append(i)
 
-    df = pd.DataFrame(data=cfg.random_state_acc)
-    df = df.sort_values(by='acc', ascending=False)
-    df.to_csv(
-        os.path.join(
-            cfg.tables,
-            cfg.exp,
-            'final_random_state_acc.csv'
-        ),
-        index=False
-    )
+    # df = pd.DataFrame(data=cfg.random_state_acc)
+    # df = df.sort_values(by='acc', ascending=False)
+    # df.to_csv(
+    #     os.path.join(
+    #         cfg.tables,
+    #         cfg.exp,
+    #         'final_random_state_acc.csv'
+    #     ),
+    #     index=False
+    # )
 
     # df = pd.read_csv(os.path.join(
     #         cfg.tables,
@@ -262,37 +267,37 @@ if __name__ == "__main__":
     # )
 
     # best_state = int(df.iloc[0]['random_state'])
+    best_state = None
 
-    # _, y_test_pred, _ = init_kmeans(
-    #         x=x_train,
-    #         x_val=x_test,
-    #         y=y_train,
-    #         y_val=y_test,
-    #         random_state=best_state,
-    #         weights=cfg.final_encoder_weights,
-    #     )
+    _, y_test_pred, _ = init_kmeans(
+            x=x_train,
+            x_val=x_test,
+            y=y_train,
+            y_val=y_test,
+            random_state=best_state,
+            weights=cfg.final_encoder_weights,
+        )
 
-    # viz.plot_ae_tsne(
-    #     encoder,
-    #     cfg.final_encoder_weights,
-    #     os.path.join(cfg.figures, cfg.exp),
-    #     x_train,
-    #     x_test
-    # )
-    # viz.plot_ae_umap(
-    #     encoder,
-    #     cfg.final_encoder_weights,
-    #     os.path.join(cfg.figures, cfg.exp),
-    #     x_train,
-    #     x_test
-    # )
-
-    # viz.plot_confusion_matrix(y_test, y_test_pred)
+    viz.plot_ae_tsne(
+        encoder,
+        cfg.final_encoder_weights,
+        os.path.join(cfg.figures, cfg.exp),
+        x_train,
+        x_test
+    )
+    viz.plot_confusion_matrix(y_test, y_test_pred)
+    viz.plot_ae_umap(
+        encoder,
+        cfg.final_encoder_weights,
+        os.path.join(cfg.figures, cfg.exp),
+        x_train,
+        x_test
+    )
 
     # plot pre-finetuning metrics
     viz.plot_metrics(
         os.path.join(cfg.tables, cfg.exp, 'random_state_acc.csv'),
-        os.path.join(cfg.figures, cfg.exp, 'pre_finetuning_acc_nmi.svg')
+        os.path.join(cfg.figures, cfg.exp, 'pretrain_acc_nmi.svg')
         )
 
     # plot final metrics
@@ -305,3 +310,6 @@ if __name__ == "__main__":
         os.path.join(cfg.tables, cfg.exp, 'encoder_finetuning.csv'),
         os.path.join(cfg.figures, cfg.exp)
         )
+
+    
+

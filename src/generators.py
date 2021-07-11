@@ -71,17 +71,16 @@ class MyImageGenerator(ImageDataGenerator):
 
 
 def generators(x_train, x_val, batch_size):
-    
     # define data augmentation configuration
     train_datagen = MyImageGenerator(
         rescale=1./225,
-        featurewise_center=True,
-        featurewise_std_normalization=True,
+        # featurewise_center=True,
+        # featurewise_std_normalization=True,
     )
-
     val_datagen = MyImageGenerator(
-        featurewise_center=True,
-        featurewise_std_normalization=True,
+        rescale=1./225,
+        # featurewise_center=True,
+        # featurewise_std_normalization=True,
     )
 
     # fit the data augmentation
@@ -96,43 +95,6 @@ def generators(x_train, x_val, batch_size):
     )
     val_generator = val_datagen.flow(
         x_val,
-        x_val,
-        batch_size=batch_size,
-        shuffle=False
-    )
-
-    return train_generator, val_generator
-
-
-def generators_da(x_train, x_val, batch_size):
-
-    # define data augmentation configuration
-    train_datagen = MyImageGenerator(
-        rescale=1./225,
-        featurewise_center=True,
-        featurewise_std_normalization=True,
-        brightness_range=[0.2,1.0],
-        vertical_flip=True,
-    )
-
-    val_datagen = MyImageGenerator(
-        rescale=1./225,
-        featurewise_center=True,
-        featurewise_std_normalization=True,
-    )
-
-    # fit the data augmentation
-    train_datagen.fit(x_train)
-    val_datagen.fit(x_val)
-
-    # setup generator
-    train_generator = train_datagen.flow(
-        x_train, 
-        x_train,
-        batch_size=batch_size,
-    )
-    val_generator = val_datagen.flow(
-        x_val, 
         x_val,
         batch_size=batch_size,
         shuffle=False

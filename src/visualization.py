@@ -40,7 +40,8 @@ def plot_ae_tsne(encoder, weights, figures, dataset, test_dataset, epoch=''):
     embedding = tsne.fit_transform(test_features)
     plt.scatter(embedding[:, 0], embedding[:, 1],
                 c=y_test_pred, s=20, cmap='brg')
-    plt.savefig(os.path.join(figures, 'tsne_encoder_' + epoch))
+    plt.savefig(os.path.join(figures, 'tsne_encoder_' + epoch + '.svg'))
+    plt.close()
 
     print('saved scatter plot ae')
 
@@ -85,7 +86,9 @@ def plot_ae_umap(encoder, weights, figures, train_dataset, dataset, epoch=''):
     plt.scatter(centers2d[:, 0], centers2d[:, 1], c='black', s=100)
     plt.xlim((min_x - 1, max_x + 1))
     plt.ylim((min_y - 1, max_y + 1))
+    # os.makedirs(os.path.join(cfg.figures, cfg.exp, 'umap'), exist_ok=True)
     plt.savefig(os.path.join(figures, 'umap_encoder_' + epoch))
+    plt.close()
     print('saved scatter plot ae')
 
 
@@ -188,6 +191,7 @@ def plot_pretrain_metrics(file, save_dir):
     plt.xlabel('Epoch')
     plt.legend(['Training loss', 'Validation loss'])
     plt.savefig(os.path.join(save_dir, 'pretrain_metrics'))
+    plt.close()
 
 
 def plot_finetuning_losses(file, save_dir):
@@ -212,7 +216,7 @@ def plot_finetuning_losses(file, save_dir):
     y2 = val_loss
     plt.plot(x1, y1)
     plt.plot(x1, y2)
-    plt.title('L')
+    plt.title('Loss')
     plt.ylabel('Loss')
     plt.xlabel('Epoch')
     plt.legend(['Train', 'Validation'])
@@ -227,7 +231,8 @@ def plot_finetuning_losses(file, save_dir):
     plt.ylabel('Loss')
     plt.xlabel('Epoch')
     plt.legend(['Train', 'Validation'])
-    plt.savefig(os.path.join(save_dir, 'finetuning_loss.svg'))
+    plt.savefig(os.path.join(save_dir, 'finetuning_losses.svg'))
+    plt.close()
 
 
 def plot_metrics(file, save_dir):
@@ -245,18 +250,21 @@ def plot_metrics(file, save_dir):
     std_train_acc = np.std(train_acc)
     std_train_nmi = np.std(train_nmi)
 
+    plt.figure(figsize=(15, 7))
     plt.subplot(1, 2, 1)
     plt.errorbar(1, mean_train_acc, yerr=std_train_acc, fmt='o')
-    plt.title('Pre finetuting accuracy')
+    plt.title('Accuracy')
     plt.ylabel('ACC')
-    plt.legend('Train')
+    # plt.legend('Train')
 
     plt.subplot(1, 2, 2)
     plt.errorbar(1, mean_train_nmi, yerr=std_train_nmi, fmt='o')
-    plt.title('Pre finetuting NMI')
+    plt.title('NMI')
     plt.ylabel('NMI')
-    plt.legend('Train')
-    plt.savefig(os.path.join(save_dir))
+    # plt.legend('Train')
+
+    plt.savefig(save_dir)
+    plt.close()
 
 
 def plot_confusion_matrix(y_true, y_pred, save_dir=os.path.join(cfg.figures, cfg.exp)):
@@ -267,7 +275,7 @@ def plot_confusion_matrix(y_true, y_pred, save_dir=os.path.join(cfg.figures, cfg
     plt.title("Confusion matrix")
     plt.ylabel('True label')
     plt.xlabel('Clustering label')
-    plt.savefig(os.path.join(save_dir, 'confusion_matrix'))
+    plt.savefig(os.path.join(save_dir, 'confusion_matrix.svg'))
 
     D = max(y_pred.max(), y_true.max()) + 1
     w = np.zeros((D, D), dtype=np.int64)
@@ -279,6 +287,7 @@ def plot_confusion_matrix(y_true, y_pred, save_dir=os.path.join(cfg.figures, cfg
     a = ind[0].tolist()
     b = ind[1].tolist()
     print(np.array([a, b]))
+    plt.close()
 
 
 def plot_dataset():
@@ -307,19 +316,41 @@ def plot_dataset():
 
     os.makedirs(os.path.join(cfg.figures, 'dataset'), exist_ok=True)
     plt.savefig(os.path.join(cfg.figures, 'dataset', 'scans.svg'))
+    plt.close()
 
 
 def feature_map(scan, layer, depth, exp, weights):
-    # load image
-    # load network aspc_29_CAE
     encoder = nets.encoder()
     encoder.load_weights(weights)
     model = Model(inputs=encoder.inputs, outputs=encoder.layers[layer].output)
+    
+    # load image
     img = predict.get_image(
         predict.get_list_per_type(cfg.train_directory, scan), 1)
     img = np.expand_dims(img, axis=-1)
     img = np.expand_dims(img, axis=0)
+
+    # get prediction
     feature_maps = model.predict(img)
+    
+    # immagine da plottare
+    square = math.sqrt(depth)
+    if isinstance(square, float):
+        square = int(square + 1)
+    ix = 1
+    for _ in range(square):
+        for _ in range(square):
+            # specify subplot and turn of axis
+            plt.subplot(square, square, ix)
+            # plot filter channel in grayscale
+            try:
+                plt.imshow(feature_maps[0, :, :, ix-1])
+            except:
+                plt.imshow(np.zeros((feature_maps.shape[1], feature_maps.shape[1]), dtype=np.uint8))
+            plt.axis('off')
+            ix += 1
+        plt.subplots_adjust(wspace=0.1, hspace=0, left=0,
+                            right=1, bottom=0, top=1)
 
     plt.figure(frameon=False, figsize=(30, 30))
 
@@ -347,6 +378,7 @@ def feature_map(scan, layer, depth, exp, weights):
                              'feature_maps'), exist_ok=True)
     plt.savefig(os.path.join(cfg.figures, cfg.exp, 'feature_maps',
                              'conv_layer_' + scan + '_' + str(layer) + '.svg'))
+    plt.close()
 
 
 if __name__ == "__main__":
