@@ -74,13 +74,13 @@ def generators(x_train, x_val, batch_size):
     # define data augmentation configuration
     train_datagen = MyImageGenerator(
         rescale=1./225,
-        # featurewise_center=True,
-        # featurewise_std_normalization=True,
+        featurewise_center=True,
+        featurewise_std_normalization=True,
     )
     val_datagen = MyImageGenerator(
         rescale=1./225,
-        # featurewise_center=True,
-        # featurewise_std_normalization=True,
+        featurewise_center=True,
+        featurewise_std_normalization=True,
     )
 
     # fit the data augmentation

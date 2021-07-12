@@ -80,49 +80,19 @@ if __name__ == "__main__":
     x_test = x_test.reshape(x_test.shape[0], 128, 128, 1)
 
     # pretrain
-    # pretrain(
-    #     autoencoder=autoencoder,
-    #     x_train=x_train,
-    #     x_val=x_val,
-    # )
-
-    # predict accuracy
-    # find best init random state
-    for i in range(20):
-        # print('final metrics:')
-        _, _, _ = predict.init_kmeans(
-            x=x_train,
-            x_val=x_test,
-            y=y_train,
-            y_val=y_test,
-            random_state=i,
-            weights=cfg.ae_weights,
-            verbose=False
-        )
-        print('RANDOM STATE', cfg.kmeans.random_state)
-        cfg.random_state_acc['acc'].append(cfg.dict_metrics['val_acc'])
-        cfg.random_state_acc['nmi'].append(cfg.dict_metrics['val_nmi'])
-        cfg.random_state_acc['random_state'].append(i)
-
-    df = pd.DataFrame(data=cfg.random_state_acc)
-    df.to_csv(
-        os.path.join(
-            cfg.tables,
-            cfg.exp,
-            'random_state_acc.csv'
-        ),
-        index=False
+    pretrain(
+        autoencoder=autoencoder,
+        x_train=x_train,
+        x_val=x_val,
     )
 
-    df = df.sort_values(by='acc', ascending=False)
-    best_state = int(df.iloc[0]['random_state'])
-
+    # predict accuracy
     predict.init_kmeans(
         x=x_train,
         x_val=x_test,
         y=y_train,
         y_val=y_test,
-        random_state=best_state,
+        random_state=None,
         weights=cfg.ae_weights
     )
 

@@ -57,47 +57,43 @@ K.set_image_data_format('channels_last')
 
 # -------------------------------------------------------------------------------------------
 
-def autoencoder(input_shape=(128, 128, 1), filters=[8, 16, 32, 64, 256]):
+def autoencoder(input_shape=(128, 128, 1), filters=[16, 32, 32, 256]):
 
     input_img = Input(shape=input_shape)
     init = 'he_normal' # VarianceScaling(scale=1. / 3., mode='fan_in', distribution='uniform')
 
     # Encoder
-    x = Conv2D(filters[0], 3, strides=1, padding='same', activation='relu', name='conv1', input_shape=input_shape, kernel_initializer=init)(input_img)
-    x = Conv2D(filters[1], 3, strides=2, padding='same', activation='relu', name='conv2', kernel_initializer=init)(x)
+    x = Conv2D(filters[0], 5, strides=4, padding='same', activation='relu', name='conv1', input_shape=input_shape, kernel_initializer=init)(input_img)
+    x = Conv2D(filters[1], 5, strides=4, padding='same', activation='relu', name='conv2', kernel_initializer=init)(x)
     x = Conv2D(filters[2], 3, strides=2, padding='same', activation='relu', name='conv3', kernel_initializer=init)(x)
-    x = Conv2D(filters[3], 3, strides=2, padding='same', activation='relu', name='conv4', kernel_initializer=init)(x)
 
     x = Flatten(name='flatten_1')(x)
 
     encoded = Dense(units=filters[-1], name='encoded', kernel_initializer=init, activation='relu')(x)
 
     # Decoder
-    x = Dense(units=16*16*filters[3], activation='relu', kernel_initializer=init)(encoded)
-    x = Reshape((16, 16, filters[3]))(x)
-    x = Conv2DTranspose(filters[2], 3, strides=2, padding='same', name='deconv4', kernel_initializer=init)(x)
+    x = Dense(units=4*4*filters[2], activation='relu', kernel_initializer=init)(encoded)
+    x = Reshape((4, 4, filters[2]))(x)
     x = Conv2DTranspose(filters[1], 3, strides=2, padding='same', name='deconv3', kernel_initializer=init)(x)
-    x = Conv2DTranspose(filters[0], 3, strides=2, padding='same', name='deconv2', kernel_initializer=init)(x)
-    decoded = Conv2DTranspose(1, 3, strides=1, padding='same', name='deconv1', kernel_initializer=init)(x)
+    x = Conv2DTranspose(filters[0], 5, strides=4, padding='same', name='deconv2', kernel_initializer=init)(x)
+    decoded = Conv2DTranspose(1, 5, strides=4, padding='same', name='deconv1', kernel_initializer=init)(x)
 
     return Model(inputs=input_img, outputs=decoded, name='CAE'), Model(inputs=input_img, outputs=encoded, name='CE')
 
 
-def encoder(input_shape=(128, 128, 1), filters=[8, 16, 32, 64, 256]):
+def encoder(input_shape=(128, 128, 1), filters=[16, 32, 32, 256]):
 
     input_img = Input(shape=input_shape)
     init = 'he_normal' # VarianceScaling(scale=1. / 3., mode='fan_in', distribution='uniform')
 
     # Encoder
-    # Encoder
-    x = Conv2D(filters[0], 3, strides=1, padding='same', activation='relu', name='conv1', input_shape=input_shape, kernel_initializer=init)(input_img)
-    x = Conv2D(filters[1], 3, strides=2, padding='same', activation='relu', name='conv2', kernel_initializer=init)(x)
+    x = Conv2D(filters[0], 5, strides=4, padding='same', activation='relu', name='conv1', input_shape=input_shape, kernel_initializer=init)(input_img)
+    x = Conv2D(filters[1], 5, strides=4, padding='same', activation='relu', name='conv2', kernel_initializer=init)(x)
     x = Conv2D(filters[2], 3, strides=2, padding='same', activation='relu', name='conv3', kernel_initializer=init)(x)
-    x = Conv2D(filters[3], 3, strides=2, padding='same', activation='relu', name='conv4', kernel_initializer=init)(x)
 
     x = Flatten(name='flatten_1')(x)
 
-    encoded = Dense(units=filters[-1], name='encoded', kernel_initializer=init)(x)
+    encoded = Dense(units=filters[-1], name='encoded', kernel_initializer=init, activation='relu')(x)
 
     return Model(inputs=input_img, outputs=encoded, name='CE')
 

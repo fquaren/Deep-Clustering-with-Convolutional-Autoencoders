@@ -24,7 +24,7 @@ tables = '/home/fquaren/unimib/tesi/data/tables'
 figures = '/home/fquaren/unimib/tesi/reports/figures'
 experiments = '/home/fquaren/unimib/tesi/experiments'
 
-exp = 'ASPC_8_16_32_64_256'
+exp = 'ASPC_16_32_32_256'
 
 ae_models = os.path.join(models, exp, 'ae')
 ae_weights = os.path.join(models, exp, 'ae', 'ae_weights')
@@ -44,7 +44,7 @@ my_callbacks = [
     )
 ]
 
-kmeans = KMeans(n_clusters=n_clusters, n_init=1000, )
+kmeans = KMeans(n_clusters=n_clusters, n_init=100)
 
 # Pandas dataframe
 dict_metrics = {}

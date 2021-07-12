@@ -75,7 +75,6 @@ class ASPC(object):
         best_state = None
         # print('BEST STATE', best_state)
 
-
         # initialization
         self.y_pred, self.val_y_pred, self.centers = init_kmeans(
             x=x_train,
@@ -94,12 +93,10 @@ class ASPC(object):
 
         # generators
         train_datagen = MyImageGenerator(
-            rescale=1./225,
             featurewise_center=True,
             featurewise_std_normalization=True,
         )
         val_datagen = MyImageGenerator(
-            rescale=1./225,
             featurewise_center=True,
             featurewise_std_normalization=True,
         )
