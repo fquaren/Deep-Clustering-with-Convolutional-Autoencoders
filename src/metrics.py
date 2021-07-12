@@ -1,5 +1,5 @@
 import numpy as np
-from sklearn.metrics import normalized_mutual_info_score, adjusted_rand_score
+from sklearn.metrics import normalized_mutual_info_score, adjusted_rand_score, accuracy_score
 from scipy.optimize import linear_sum_assignment as linear_assignment
 
 nmi = normalized_mutual_info_score
@@ -25,6 +25,9 @@ def acc(y_true, y_pred):
     result = sum(
         [w[i, j] for (i, j) in zip(row_ind, col_ind)]) * 1.0 / y_pred.size
     return result
+
+# def acc(y_true, y_pred):
+#     return accuracy_score(y_true=y_true, y_pred=y_pred)
 
 
 # Student's distribution (see paper)

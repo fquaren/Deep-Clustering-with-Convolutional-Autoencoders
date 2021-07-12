@@ -1,4 +1,4 @@
-from predict import pred_cae
+from predict import pred_ae
 import random
 import os
 import config as cfg
@@ -8,6 +8,8 @@ from sklearn.cluster import KMeans
 from nets import ClusteringLayer
 from metrics import nmi, ari, acc
 from build_and_save_features import load_dataset
+import predict
+import numpy as np
 
 
 def pretrainCAE(
@@ -32,48 +34,15 @@ def pretrainCAE(
         validation_data=(x_val, x_val),
         callbacks=my_callbacks
     )
-    autoencoder.save_weights(os.path.join(cae_models, 'cae_weights'))
-    encoder.save_weights(os.path.join(cae_models, 'ce_weights'))
     # save plot metrics
-    cfg.d_cae['train_loss'] = autoencoder.history.history['loss']
-    cfg.d_cae['val_loss'] = autoencoder.history.history['val_loss']
+    cfg.dict_metrics['train_loss'] = autoencoder.history.history['loss']
+    cfg.dict_metrics['val_loss'] = autoencoder.history.history['val_loss']
 
-
-def init_kmeans(cae, n_clusters, ce_weights, n_init_kmeans, x, y):
-
-    autoencoder, encoder = cae
-
-    # init DCEC
-    clustering_layer = ClusteringLayer(n_clusters, name='clustering')(encoder.output)
-    model = Model(inputs=encoder.input, outputs=[clustering_layer, autoencoder.output])
-    model.compile(loss='kld', optimizer=cfg.dcec_optim)
-    model.summary()
-
-    # Initialize model using k-means centers
-    print('k-means...')
-    encoder.load_weights(cfg.ce_weights)
-    kmeans = KMeans(n_clusters=n_clusters, n_init=n_init_kmeans)
-    input_cluster = encoder.predict(x)
-    y_pred = kmeans.fit_predict(input_cluster)
-    y_pred_last = y_pred.copy()
-    centers = kmeans.cluster_centers_
-    model.get_layer(name='clustering').set_weights([centers])
-    print('metrics before training.')
-    print(
-        'acc = {}; nmi = {}; ari = {}'.format(
-            acc(y, y_pred),
-            nmi(y, y_pred),
-            ari(y, y_pred)
-        )
+    pred_ae(
+        net=autoencoder,
+        weights=cfg.cae_weights,
+        directory=cfg.train_directory,
     )
-
-    cfg.d_cae['acc'] = acc(y, y_pred)
-    cfg.d_cae['nmi'] = nmi(y, y_pred)
-    cfg.d_cae['ari'] = ari(y, y_pred)
-
-    metrics = cfg.d_cae
-
-    return model, y_pred_last, metrics
 
 
 if __name__ == "__main__":
@@ -87,6 +56,10 @@ if __name__ == "__main__":
     os.makedirs(os.path.join(cfg.figures, cfg.exp, 'cae'), exist_ok=True)
     os.makedirs(os.path.join(cfg.models, cfg.exp, 'cae'), exist_ok=True)
 
+    x_train = x_train.reshape(x_train.shape[0], 128, 128, 1)
+    x_val = x_val.reshape(x_val.shape[0], 128, 128, 1)
+    x_test = x_test.reshape(x_test.shape[0], 128, 128, 1)
+
     # pretrain CAE
     pretrainCAE(
         model=cfg.cae,
@@ -99,25 +72,34 @@ if __name__ == "__main__":
         optim=cfg.cae_optim
     )
 
-    pred_cae(
-        net=cfg.cae,
-        weights=os.path.join(cfg.models, cfg.exp, 'cae', 'cae_weights'),
-        directory=cfg.test_directory,
-        scans=cfg.scans,
-        figures=cfg.figures,
-        exp=cfg.exp,
-        n=random.randint(0, 10)
+    predict.init_kmeans(
+        x=x_train,
+        x_val=x_test,
+        y=y_train,
+        y_val=y_test,
+        random_state=None,
+        weights=cfg.cae_weights,
     )
 
-    _, _, _ = init_kmeans(
-        cae=cfg.cae,
-        n_clusters=cfg.n_clusters,
-        ce_weights=cfg.ce_weights,
-        n_init_kmeans=cfg.n_init_kmeans,
-        x=x_train,
-        y=y_train,
-    )
+    # test_acc_list = []
+    # test_nmi_list = []
+    # for i in range(25):
+    #     _, _, _, test_acc, test_nmi = predict.init_kmeans(
+    #         x=x_train,
+    #         x_val=x_test,
+    #         y=y_train,
+    #         y_val=y_test,
+    #         random_state=None,
+    #         weights=cfg.cae_weights,
+    #     )
+    #     test_acc_list.append(test_acc)
+    #     test_nmi_list.append(test_nmi)
+
+    # print('MEAN ACC:', np.mean(test_acc_list))
+    # print('STD ACC:', np.std(test_acc_list))
+    # print('MEAN NMI:', np.mean(test_nmi_list))
+    # print('STD NMI:', np.std(test_nmi_list))
 
     # save metrics to csv
-    df = pd.DataFrame(data=cfg.d_cae)
-    df.to_csv(os.path.join(cfg.tables, cfg.exp, 'cae_train.csv'), index=False)
+    # df = pd.DataFrame(data=cfg.dict_metrics)
+    # df.to_csv(os.path.join(cfg.tables, cfg.exp, 'cae_train.csv'), index=False)

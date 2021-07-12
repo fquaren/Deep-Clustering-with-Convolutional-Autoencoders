@@ -26,19 +26,19 @@ tables = '/home/fquaren/unimib/tesi/data/tables'
 figures = '/home/fquaren/unimib/tesi/reports/figures'
 experiments = '/home/fquaren/unimib/tesi/experiments'
 
-exp = 'new_dataset_with_old'
+exp = 'DCEC_11_4'
 
 cae_models = os.path.join(models, exp, 'cae')
 cae_weights = os.path.join(models, exp, 'cae', 'cae_weights')
 ce_weights = os.path.join(models, exp, 'cae', 'ce_weights')
 
 # Pretrain CAE settings
-cae = nets.CAE_Conv2DTranspose_shallow()
+cae = nets.autoencoder()
 
-pretrain_epochs = 5000
+pretrain_epochs = 1000000
 cae_batch_size = 12
 my_callbacks = [
-    EarlyStopping(patience=10, monitor='val_loss'),
+    EarlyStopping(patience=25, monitor='val_loss'),
     ModelCheckpoint(
         filepath=cae_weights,
         save_best_only=True,
@@ -49,17 +49,15 @@ my_callbacks = [
 cae_optim = 'adam'
 
 # Train DCEC settings
-n_init_kmeans = 50
 dcec_bs = 64
-maxiter = 3000
-update_interval = 100
+maxiter = 1000
+update_interval = 10
 save_interval = update_interval
 tol = 0.001
-gamma = 0.001
+gamma = 0.01
 index = 0
 
-learning_rate_fn = ExponentialDecay(initial_learning_rate=0.001, decay_steps=500, decay_rate=0.96)
-dcec_optim = Adam(learning_rate=learning_rate_fn)
+dcec_optim = Adam(learning_rate=1e-5)
 
 # Pandas dataframe
 d = {
@@ -70,15 +68,17 @@ d = {
     'val_clustering_loss': [],
     'reconstruction_loss': [],
     'val_reconstruction_loss': [],
-    'train_acc': [],
-    'val_acc': [],
-    'train_nmi': [],
-    'val_nmi': [],
-    'train_ari': [],
-    'val_ari': []
+    # 'train_acc': [],
+    # 'val_acc': [],
+    # 'train_nmi': [],
+    # 'val_nmi': [],
+    # 'train_ari': [],
+    # 'val_ari': []
 }
 
 d_cae = {
     'train_loss': [],
     'val_loss': []
 }
+
+dict_metrics = {}

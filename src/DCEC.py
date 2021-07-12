@@ -6,8 +6,11 @@ import pandas as pd
 import config as cfg
 from metrics import target_distribution, nmi, ari, acc
 from predict import pred_dcec
-from CAE import init_kmeans
 from build_and_save_features import load_dataset
+import predict
+from keras.models import Model
+from nets import ClusteringLayer
+from tensorflow.keras.optimizers import Adam
 
 
 def train_val_DCEC(
@@ -18,7 +21,6 @@ def train_val_DCEC(
         y_train,
         x_val,
         y_val,
-        y_pred_last,
         model,
         tol,
         index,
@@ -26,18 +28,14 @@ def train_val_DCEC(
         dictionary,
         path_models_dcec,
         tables,
-        exp
+        exp,
+        y_pred_last,
+        i
             ):
 
     # Init loss
     train_loss = [0, 0, 0]
     val_loss = [0, 0, 0]
-
-    model.compile(
-        loss=['kld', 'mse'],
-        loss_weights=[cfg.gamma, 1],
-        optimizer=cfg.dcec_optim
-    )
 
     # Train and val
     for ite in tqdm(range(int(maxiter))):
@@ -58,14 +56,14 @@ def train_val_DCEC(
                 print('\nIter {}: train acc={}, train nmi={}, train ari={}, train loss={}'.format(
                         ite, train_acc, train_nmi, train_ari, train_loss))
 
-            y_val_pred = val_q.argmax(1)
-            if y_val is not None:
-                val_acc = np.round(acc(y_val, y_val_pred), 5)
-                val_nmi = np.round(nmi(y_val, y_val_pred), 5)
-                val_ari = np.round(ari(y_val, y_val_pred), 5)
-                val_loss = np.round(val_loss, 5)
-                print('Iter {}: val acc={}, val nmi={}, val ari={}, val loss={}'.format(
-                    ite, val_acc, val_nmi, val_ari, val_loss))
+            # y_val_pred = val_q.argmax(1)
+            # if y_val is not None:
+                # val_acc = np.round(acc(y_val, y_val_pred), 5)
+                # val_nmi = np.round(nmi(y_val, y_val_pred), 5)
+                # val_ari = np.round(ari(y_val, y_val_pred), 5)
+                # val_loss = np.round(val_loss, 5)
+                # print('Iter {}: val acc={}, val nmi={}, val ari={}, val loss={}'.format(
+                #     ite, val_acc, val_nmi, val_ari, val_loss))
 
             # Check stop criterion on train -> TODO on validation?
             # diff = [f for i, f in enumerate(y_train_pred) if f != y_pred_last[i]]
@@ -75,6 +73,9 @@ def train_val_DCEC(
             if ite > 0 and delta_label < tol:
                 print('delta_label ', delta_label, '< tol ', tol)
                 print('Reached tolerance threshold. Stopping training.')
+                # Save the trained model
+                model.save_weights(
+                    os.path.join(path_models_dcec, 'dcec_model_final.h5'))
                 break
         
         # Train on batch
@@ -101,12 +102,12 @@ def train_val_DCEC(
         dictionary['val_clustering_loss'].append(val_loss[1])
         dictionary['reconstruction_loss'].append(train_loss[2])
         dictionary['val_reconstruction_loss'].append(val_loss[2])
-        dictionary['train_acc'].append(train_acc)
-        dictionary['val_acc'].append(val_acc)
-        dictionary['train_nmi'].append(train_nmi)
-        dictionary['val_nmi'].append(val_nmi)
-        dictionary['train_ari'].append(train_ari)
-        dictionary['val_ari'].append(val_ari)
+        # dictionary['train_acc'].append(train_acc)
+        # dictionary['val_acc'].append(val_acc)
+        # dictionary['train_nmi'].append(train_nmi)
+        # dictionary['val_nmi'].append(val_nmi)
+        # dictionary['train_ari'].append(train_ari)
+        # dictionary['val_ari'].append(val_ari)
 
         # Save model checkpoint
         if ite % save_interval == 0:
@@ -116,9 +117,7 @@ def train_val_DCEC(
                     exp, path_models_dcec, 'dcec_model_'+str(ite)+'.h5'))
         ite += 1
 
-        # Save the trained model
-        model.save_weights(
-            os.path.join(path_models_dcec, 'dcec_model_final.h5'))
+        
 
     # Save metrics to csv
     df = pd.DataFrame(data=dictionary)
@@ -144,56 +143,116 @@ def main():
     x_val, y_val = load_dataset('x_val.npy', 'y_val.npy')
     x_test, y_test = load_dataset('x_test.npy', 'y_test.npy')
 
-    model, y_pred_last, metrics = init_kmeans(
-        cae=cfg.cae,
-        n_clusters=cfg.n_clusters,
-        ce_weights=cfg.ce_weights,
-        n_init_kmeans=cfg.n_init_kmeans,
-        x=x_train,
-        y=y_train,
-    )
-    
-    count = 0
-    while metrics['acc'] < 0.5 and count < 100:
-        model, y_pred_last, metrics = init_kmeans(
-            cae=cfg.cae,
-            n_clusters=cfg.n_clusters,
-            ce_weights=cfg.ce_weights,
-            n_init_kmeans=cfg.n_init_kmeans,
-            x=x_train,
-            y=y_train,
+    x_train = x_train.reshape(x_train.shape[0], 128, 128, 1)
+    x_val = x_val.reshape(x_val.shape[0], 128, 128, 1)
+    x_test = x_test.reshape(x_test.shape[0], 128, 128, 1)
+
+    autoencoder, encoder = cfg.cae
+
+    # autoencoder.load_weights(cfg.cae_weights)
+
+    # clustering_layer = ClusteringLayer(n_clusters=3, name='clustering')(encoder.output)
+    # model = Model(inputs=encoder.input, outputs=[clustering_layer, autoencoder.output])
+    # model.compile(
+    #     loss=['kld', 'mse'],
+    #     loss_weights=[cfg.gamma, 1],
+    #     optimizer=Adam(learning_rate=1e-5) 
+    # )
+    # model.summary()
+
+    pre_test_acc_list = []
+    pre_test_nmi_list = []
+    test_acc_list = []
+    test_nmi_list = []
+
+    for i in range(50):
+
+        autoencoder.load_weights(cfg.cae_weights)
+
+        clustering_layer = ClusteringLayer(n_clusters=3, name='clustering')(encoder.output)
+        model = Model(inputs=encoder.input, outputs=[clustering_layer, autoencoder.output])
+        model.compile(
+            loss=['kld', 'mse'],
+            loss_weights=[cfg.gamma, 1],
+            optimizer=cfg.dcec_optim
         )
-        count += 1
+        model.summary()
 
-    train_val_DCEC(
-        exp=cfg.exp,
-        maxiter=cfg.maxiter,
-        update_interval=cfg.update_interval,
-        save_interval=cfg.save_interval,
-        x_train=x_train,
-        y_train=y_train,
-        x_val=x_val,
-        y_val=y_val,
-        y_pred_last=y_pred_last,
-        model=model,
-        tol=cfg.tol,
-        index=cfg.index,
-        dcec_bs=cfg.dcec_bs,
-        dictionary=cfg.d,
-        path_models_dcec=os.path.join(cfg.models, cfg.exp, 'dcec'),
-        tables=cfg.tables
-    )
+        y_pred_last, _, _, pre_test_acc, pre_test_nmi = predict.init_kmeans(
+            x=x_train,
+            x_val=x_test,
+            y=y_train,
+            y_val=y_test,
+            random_state=None,
+            weights=cfg.cae_weights,
+        )
 
-    pred_dcec(
-        model=model,
-        weights=os.path.join(
-            cfg.models, cfg.exp, 'dcec', 'dcec_model_final.h5'),
-        directory=cfg.test_directory,
-        scans=cfg.scans,
-        figures=cfg.figures,
-        exp=cfg.exp,
-        n=random.randint(0, 20)
-    )
+        train_val_DCEC(
+            exp=cfg.exp,
+            maxiter=cfg.maxiter,
+            update_interval=cfg.update_interval,
+            save_interval=cfg.save_interval,
+            x_train=x_train,
+            y_train=y_train,
+            x_val=x_val,
+            y_val=y_val,
+            model=model,
+            tol=cfg.tol,
+            index=cfg.index,
+            dcec_bs=cfg.dcec_bs,
+            dictionary=cfg.d,
+            path_models_dcec=os.path.join(cfg.models, cfg.exp, 'dcec'),
+            tables=cfg.tables,
+            y_pred_last=y_pred_last,
+            i=i
+        )
+
+        _, _, _, test_acc, test_nmi = predict.init_kmeans_dcec(
+            model=model,
+            x=x_train,
+            x_val=x_test,
+            y=y_train,
+            y_val=y_test,
+            random_state=None,
+            weights=os.path.join(
+                cfg.models, cfg.exp, 'dcec', 'dcec_model_final.h5'),
+        )
+
+        pred_dcec(
+            model=model,
+            weights=os.path.join(
+                cfg.models, cfg.exp, 'dcec', 'dcec_model_final.h5'),
+            directory=cfg.test_directory,
+            scans=cfg.scans,
+            figures=cfg.figures,
+            exp=cfg.exp,
+            n=random.randint(0, 20)
+        )
+
+        pre_test_acc_list.append(pre_test_acc)
+        pre_test_nmi_list.append(pre_test_nmi)
+        test_acc_list.append(test_acc)
+        test_nmi_list.append(test_nmi)
+
+    print('MEAN PRE ACC:', np.mean(pre_test_acc_list))
+    print('STD PRE ACC:', np.std(pre_test_acc_list))
+    print('MEAN PRE NMI:', np.mean(pre_test_nmi_list))
+    print('STD PRE NMI:', np.std(pre_test_nmi_list))
+
+    print('MEAN ACC:', np.mean(test_acc_list))
+    print('STD ACC:', np.std(test_acc_list))
+    print('MEAN NMI:', np.mean(test_nmi_list))
+    print('STD NMI:', np.std(test_nmi_list))
+
+    print('MAX PRE ACC:', max(pre_test_acc_list))
+    print('MAX PRE NMI:', max(pre_test_nmi_list))
+    print('MAX ACC:', max(test_acc_list))
+    print('MAX NMI:', max(test_nmi_list))
+
+    print('min PRE ACC:', min(pre_test_acc_list))
+    print('min PRE NMI:', min(pre_test_nmi_list))
+    print('min ACC:', min(test_acc_list))
+    print('min NMI:', min(test_nmi_list))
 
     print('done.')
 

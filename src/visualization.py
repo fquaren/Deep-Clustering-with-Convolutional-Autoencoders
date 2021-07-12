@@ -15,7 +15,7 @@ from build_and_save_features import load_dataset
 from metrics import acc, nmi, ari
 
 
-def plot_cae_tnse(autoencoder, encoder, models_directory, figures, dataset):
+def plot_ae_tsne(encoder, weights, figures, dataset, test_dataset, epoch=''):
     """
     parameters:
     - autoencoder,
@@ -23,20 +23,150 @@ def plot_cae_tnse(autoencoder, encoder, models_directory, figures, dataset):
     - models_directory: directory containing the models,
     - figures: directory to save the plots
     - dataset: dataset on which to predict (train, val, test)
-
     Loads the model weigths from models directory, predicts model output,
     perfoms kmeans and tsne and plots result.
     """
-    autoencoder.load_weights(os.path.join(models_directory, 'cae_weights'))
-    kmeans = KMeans(n_clusters=cfg.n_clusters, n_init=50)
+    encoder.load_weights(weights)
+    kmeans = cfg.kmeans
     features = encoder.predict(dataset)
-    y_pred = kmeans.fit_predict(features)
-    tsne = TSNE(n_components=2, perplexity=50)
-    embedding = tsne.fit_transform(features)
+    _ = kmeans.fit_predict(features)
+    test_features = encoder.predict(test_dataset)
+    y_test_pred = kmeans.predict(test_features)
     plt.figure()
-    plt.scatter(embedding[:, 0], embedding[:, 1], c=y_pred, s=20, cmap='brg')
-    plt.savefig(os.path.join(figures, 'tsne_cae'))
-    print('saved scatter plot cae')
+    tsne = TSNE(n_components=2, perplexity=50, n_iter=3000)
+    embedding = tsne.fit_transform(test_features)
+    plt.scatter(embedding[:, 0], embedding[:, 1],
+                c=y_test_pred, s=20, cmap='brg')
+    plt.savefig(os.path.join(figures, 'tsne_encoder_' + epoch + '.svg'))
+    plt.close()
+
+    print('saved scatter plot ae')
+
+
+def plot_ae_umap(encoder, weights, figures, train_dataset, dataset, epoch=''):
+    """
+    parameters:
+    - autoencoder,
+    - encoder,
+    - models_directory: directory containing the models,
+    - figures: directory to save the plots
+    - dataset: dataset on which to predict (train, val, test)
+    Loads the model weigths from models directory, predicts model output,
+    perfoms kmeans and tsne and plots result.
+    """
+    encoder.load_weights(weights)
+    kmeans = cfg.kmeans
+    features = encoder.predict(train_dataset)
+    _ = kmeans.fit_predict(features)
+    centers = kmeans.cluster_centers_.astype(np.float32)
+    test_features = encoder.predict(dataset)
+    y_test_pred = kmeans.predict(test_features)
+    reducer = umap.UMAP()
+    reducer.fit(features)
+    test_embedding = reducer.transform(test_features)
+    centers2d = reducer.transform(centers)
+    min_x = min(test_embedding, key=lambda x: x[0])[0]
+    min_y = min(test_embedding, key=lambda x: x[1])[1]
+    max_x = max(test_embedding, key=lambda x: x[0])[0]
+    max_y = max(test_embedding, key=lambda x: x[1])[1]
+    centers2d = np.append(
+        centers2d, [[999, 999], [-999, 999], [999, -999], [-999, -999]], axis=0)
+
+    vor = Voronoi(centers2d)
+    regions, vertices = voronoi_finite_polygons_2d(vor)
+    # colorize
+    for region in regions:
+        polygon = vertices[region]
+        plt.fill(*zip(*polygon), alpha=0.4)
+    plt.scatter(test_embedding[:, 0], test_embedding[:,1], c=y_test_pred, s=20, cmap='brg')
+    plt.scatter(centers2d[:, 0], centers2d[:, 1], c='black', s=100)
+    plt.xlim((min_x - 1, max_x + 1))
+    plt.ylim((min_y - 1, max_y + 1))
+    # os.makedirs(os.path.join(cfg.figures, cfg.exp, 'umap'), exist_ok=True)
+    plt.savefig(os.path.join(figures, 'umap_encoder_' + epoch))
+    plt.close()
+    print('saved scatter plot ae')
+
+
+def voronoi_finite_polygons_2d(vor, radius=None):
+    """
+    Reconstruct infinite voronoi regions in a 2D diagram to finite
+    regions.
+    Parameters
+    ----------
+    vor : Voronoi
+        Input diagram
+    radius : float, optional
+        Distance to 'points at infinity'.
+    Returns
+    -------
+    regions : list of tuples
+        Indices of vertices in each revised Voronoi regions.
+    vertices : list of tuples
+        Coordinates for revised Voronoi vertices. Same as coordinates
+        of input vertices, with 'points at infinity' appended to the
+        end.
+    """
+
+    if vor.points.shape[1] != 2:
+        raise ValueError("Requires 2D input")
+
+    new_regions = []
+    new_vertices = vor.vertices.tolist()
+
+    center = vor.points.mean(axis=0)
+    if radius is None:
+        radius = vor.points.ptp().max()
+
+    # Construct a map containing all ridges for a given point
+    all_ridges = {}
+    for (p1, p2), (v1, v2) in zip(vor.ridge_points, vor.ridge_vertices):
+        all_ridges.setdefault(p1, []).append((p2, v1, v2))
+        all_ridges.setdefault(p2, []).append((p1, v1, v2))
+
+    # Reconstruct infinite regions
+    for p1, region in enumerate(vor.point_region):
+        vertices = vor.regions[region]
+
+        if all(v >= 0 for v in vertices):
+            # finite region
+            new_regions.append(vertices)
+            continue
+
+        # reconstruct a non-finite region
+        ridges = all_ridges[p1]
+        new_region = [v for v in vertices if v >= 0]
+
+        for p2, v1, v2 in ridges:
+            if v2 < 0:
+                v1, v2 = v2, v1
+            if v1 >= 0:
+                # finite ridge: already in the region
+                continue
+
+            # Compute the missing endpoint of an infinite ridge
+
+            t = vor.points[p2] - vor.points[p1]  # tangent
+            t /= np.linalg.norm(t)
+            n = np.array([-t[1], t[0]])  # normal
+
+            midpoint = vor.points[[p1, p2]].mean(axis=0)
+            direction = np.sign(np.dot(midpoint - center, n)) * n
+            far_point = vor.vertices[v2] + direction * radius
+
+            new_region.append(len(new_vertices))
+            new_vertices.append(far_point.tolist())
+
+        # sort region counterclockwise
+        vs = np.asarray([new_vertices[v] for v in new_region])
+        c = vs.mean(axis=0)
+        angles = np.arctan2(vs[:, 1] - c[1], vs[:, 0] - c[0])
+        new_region = np.array(new_region)[np.argsort(angles)]
+
+        # finish
+        new_regions.append(new_region.tolist())
+
+    return new_regions, np.asarray(new_vertices)
 
 
 def plot_pretrain_metrics(file, save_dir):
