@@ -26,7 +26,7 @@ tables = '/home/fquaren/unimib/tesi/data/tables'
 figures = '/home/fquaren/unimib/tesi/reports/figures'
 experiments = '/home/fquaren/unimib/tesi/experiments'
 
-exp = 'DCEC_11_4'
+exp = 'DCEC_12_30emb'
 
 cae_models = os.path.join(models, exp, 'cae')
 cae_weights = os.path.join(models, exp, 'cae', 'cae_weights')
@@ -54,10 +54,10 @@ maxiter = 1000
 update_interval = 10
 save_interval = update_interval
 tol = 0.001
-gamma = 0.01
+gamma = 0.001
 index = 0
 
-dcec_optim = Adam(learning_rate=1e-5)
+dcec_optim = Adam(learning_rate=1e-6)
 
 # Pandas dataframe
 d = {

@@ -5,7 +5,7 @@ from keras.engine.topology import InputSpec, Layer
 from tensorflow.keras import initializers
 
 
-def autoencoder(input_shape=(128, 128, 1), filters=[16, 32, 32, 256]):
+def autoencoder(input_shape=(128, 128, 1), filters=[16, 32, 32, 30]):
 
     input_img = Input(shape=input_shape)
 
@@ -28,7 +28,7 @@ def autoencoder(input_shape=(128, 128, 1), filters=[16, 32, 32, 256]):
     return Model(inputs=input_img, outputs=decoded, name='CAE'), Model(inputs=input_img, outputs=encoded, name='CE')
 
 
-def encoder(input_shape=(128, 128, 1), filters=[16, 32, 32, 256]):
+def encoder(input_shape=(128, 128, 1), filters=[16, 32, 32, 30]):
 
     input_img = Input(shape=input_shape)
 
@@ -36,7 +36,7 @@ def encoder(input_shape=(128, 128, 1), filters=[16, 32, 32, 256]):
     x = Conv2D(filters[0], 5, strides=4, padding='same', activation='relu', name='conv1', input_shape=input_shape)(input_img)
     x = Conv2D(filters[1], 5, strides=4, padding='same', activation='relu', name='conv2')(x)
     x = Conv2D(filters[2], 3, strides=2, padding='same', activation='relu', name='conv3')(x)
-    
+
     x = Flatten(name='flatten_1')(x)
 
     encoded = Dense(units=filters[-1], activation='relu', name='encoded')(x)

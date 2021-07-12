@@ -128,8 +128,6 @@ def create_tensors(path):
     X -= np.mean(X)  # mean subtraction
     # X /= np.std(X, axis = 0)  # normalization
     X = X.reshape(X.shape + (1,))
-    random.shuffle(X)
-    random.shuffle(Y)
     return X, Y
 
 

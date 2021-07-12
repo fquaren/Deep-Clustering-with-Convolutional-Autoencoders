@@ -64,9 +64,9 @@ def pred_ae(net, weights, directory, exp=cfg.exp, n=random.randint(0, 10), scans
         plt.imshow(pred_img[0])
         os.makedirs(os.path.join(figures, exp, 'ae'), exist_ok=True)
         plt.savefig(os.path.join(figures, exp, 'ae', scan+'_ae_pred.png'))
+        plt.close()
     print('Prediction on test images done.')
-    plt.close()
-
+    
 
 def pred_dcec(model, weights, directory, scans, figures, exp, n):
     '''
@@ -87,8 +87,9 @@ def pred_dcec(model, weights, directory, scans, figures, exp, n):
         plt.imshow(pred_img)
         os.makedirs(os.path.join(figures, exp, 'dcec'), exist_ok=True)
         plt.savefig(os.path.join(figures, exp, 'dcec', scan))
+        plt.close()
     print('Prediction on test images done.')
-
+    
 
 def init_kmeans(x, x_val, y, y_val, random_state, weights, n_clusters=3, verbose=True):
     kmeans = KMeans(n_clusters=n_clusters, n_init=100)

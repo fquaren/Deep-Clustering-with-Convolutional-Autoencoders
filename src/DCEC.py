@@ -11,6 +11,7 @@ import predict
 from keras.models import Model
 from nets import ClusteringLayer
 from tensorflow.keras.optimizers import Adam
+import visualization as viz
 
 
 def train_val_DCEC(
@@ -22,6 +23,7 @@ def train_val_DCEC(
         x_val,
         y_val,
         model,
+        encoder,
         tol,
         index,
         dcec_bs,
@@ -76,6 +78,8 @@ def train_val_DCEC(
                 # Save the trained model
                 model.save_weights(
                     os.path.join(path_models_dcec, 'dcec_model_final.h5'))
+                encoder.save_weights(
+                    os.path.join(path_models_dcec, 'dcec_encoder_final.h5'))
                 break
         
         # Train on batch
@@ -116,8 +120,6 @@ def train_val_DCEC(
                 os.path.join(
                     exp, path_models_dcec, 'dcec_model_'+str(ite)+'.h5'))
         ite += 1
-
-        
 
     # Save metrics to csv
     df = pd.DataFrame(data=dictionary)
@@ -197,6 +199,7 @@ def main():
             x_val=x_val,
             y_val=y_val,
             model=model,
+            encoder=encoder,
             tol=cfg.tol,
             index=cfg.index,
             dcec_bs=cfg.dcec_bs,
@@ -204,10 +207,10 @@ def main():
             path_models_dcec=os.path.join(cfg.models, cfg.exp, 'dcec'),
             tables=cfg.tables,
             y_pred_last=y_pred_last,
-            i=i
+            i=0
         )
 
-        _, _, _, test_acc, test_nmi = predict.init_kmeans_dcec(
+        y_test_pred, _, _, test_acc, test_nmi = predict.init_kmeans_dcec(
             model=model,
             x=x_train,
             x_val=x_test,
@@ -234,25 +237,41 @@ def main():
         test_acc_list.append(test_acc)
         test_nmi_list.append(test_nmi)
 
-    print('MEAN PRE ACC:', np.mean(pre_test_acc_list))
-    print('STD PRE ACC:', np.std(pre_test_acc_list))
-    print('MEAN PRE NMI:', np.mean(pre_test_nmi_list))
-    print('STD PRE NMI:', np.std(pre_test_nmi_list))
+        print('MEAN PRE ACC:', np.mean(pre_test_acc_list))
+        print('STD PRE ACC:', np.std(pre_test_acc_list))
+        print('MEAN PRE NMI:', np.mean(pre_test_nmi_list))
+        print('STD PRE NMI:', np.std(pre_test_nmi_list))
 
-    print('MEAN ACC:', np.mean(test_acc_list))
-    print('STD ACC:', np.std(test_acc_list))
-    print('MEAN NMI:', np.mean(test_nmi_list))
-    print('STD NMI:', np.std(test_nmi_list))
+        print('MEAN ACC:', np.mean(test_acc_list))
+        print('STD ACC:', np.std(test_acc_list))
+        print('MEAN NMI:', np.mean(test_nmi_list))
+        print('STD NMI:', np.std(test_nmi_list))
 
-    print('MAX PRE ACC:', max(pre_test_acc_list))
-    print('MAX PRE NMI:', max(pre_test_nmi_list))
-    print('MAX ACC:', max(test_acc_list))
-    print('MAX NMI:', max(test_nmi_list))
+        print('MAX PRE ACC:', max(pre_test_acc_list))
+        print('MAX PRE NMI:', max(pre_test_nmi_list))
+        print('MAX ACC:', max(test_acc_list))
+        print('MAX NMI:', max(test_nmi_list))
 
-    print('min PRE ACC:', min(pre_test_acc_list))
-    print('min PRE NMI:', min(pre_test_nmi_list))
-    print('min ACC:', min(test_acc_list))
-    print('min NMI:', min(test_nmi_list))
+        print('min PRE ACC:', min(pre_test_acc_list))
+        print('min PRE NMI:', min(pre_test_nmi_list))
+        print('min ACC:', min(test_acc_list))
+        print('min NMI:', min(test_nmi_list))
+                                            
+    viz.plot_ae_tsne(
+        encoder,
+        os.path.join(cfg.models, cfg.exp, 'dcec', 'dcec_encoder_final.h5'),
+        os.path.join(cfg.figures, cfg.exp),
+        x_train,
+        x_test
+    )
+    # viz.plot_confusion_matrix(y_test, y_test_pred)
+    viz.plot_ae_umap(
+        encoder,
+        os.path.join(cfg.models, cfg.exp, 'dcec', 'dcec_encoder_final.h5'),
+        os.path.join(cfg.figures, cfg.exp),
+        x_train,
+        x_test
+    )
 
     print('done.')
 

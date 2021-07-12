@@ -13,6 +13,11 @@ import config as cfg
 from nets import ClusteringLayer
 from build_and_save_features import load_dataset
 from metrics import acc, nmi, ari
+import umap
+from scipy.spatial import Voronoi
+import nets
+import predict
+import math
 
 
 def plot_ae_tsne(encoder, weights, figures, dataset, test_dataset, epoch=''):
@@ -27,13 +32,13 @@ def plot_ae_tsne(encoder, weights, figures, dataset, test_dataset, epoch=''):
     perfoms kmeans and tsne and plots result.
     """
     encoder.load_weights(weights)
-    kmeans = cfg.kmeans
+    kmeans = KMeans(n_clusters=3, n_init=100)
     features = encoder.predict(dataset)
     _ = kmeans.fit_predict(features)
     test_features = encoder.predict(test_dataset)
     y_test_pred = kmeans.predict(test_features)
     plt.figure()
-    tsne = TSNE(n_components=2, perplexity=50, n_iter=3000)
+    tsne = TSNE(n_components=2)  # , perplexity=50, n_iter=3000)
     embedding = tsne.fit_transform(test_features)
     plt.scatter(embedding[:, 0], embedding[:, 1],
                 c=y_test_pred, s=20, cmap='brg')
@@ -55,7 +60,7 @@ def plot_ae_umap(encoder, weights, figures, train_dataset, dataset, epoch=''):
     perfoms kmeans and tsne and plots result.
     """
     encoder.load_weights(weights)
-    kmeans = cfg.kmeans
+    kmeans = kmeans = KMeans(n_clusters=3, n_init=100)
     features = encoder.predict(train_dataset)
     _ = kmeans.fit_predict(features)
     centers = kmeans.cluster_centers_.astype(np.float32)
@@ -75,6 +80,7 @@ def plot_ae_umap(encoder, weights, figures, train_dataset, dataset, epoch=''):
     vor = Voronoi(centers2d)
     regions, vertices = voronoi_finite_polygons_2d(vor)
     # colorize
+    plt.figure()
     for region in regions:
         polygon = vertices[region]
         plt.fill(*zip(*polygon), alpha=0.4)
@@ -203,7 +209,7 @@ def plot_dcec_tsne(model, models_directory, figures, dataset):
         kmeans = KMeans(n_clusters=cfg.n_clusters, n_init=50)
         features = model.predict(dataset)[0]
         y_pred = kmeans.fit_predict(features)
-        tsne = TSNE(n_components=2, perplexity=50)
+        tsne = TSNE(n_components=2)
         embedding = tsne.fit_transform(features)
         plt.figure()
         plt.scatter(
@@ -318,19 +324,19 @@ def test_dcec(model, x, y):
     return metrics, y_test_pred
 
 
-def plot_confusion_matrix(y_true, y_pred, save_dir):
-    matrix = confusion_matrix(
-        [int(i) for i in y_true], y_pred)
+def plot_confusion_matrix(y_true, y_pred, save_dir=os.path.join(cfg.figures, cfg.exp)):
+    matrix = confusion_matrix(y_true=y_true, y_pred=y_pred)
 
     plt.figure()
     sns.heatmap(matrix, annot=True, fmt="d", annot_kws={"size": 20})
     plt.title("Confusion matrix")
     plt.ylabel('True label')
     plt.xlabel('Clustering label')
-    plt.savefig(os.path.join(save_dir, 'confusion_matrix'))
+    plt.savefig(os.path.join(save_dir, 'confusion_matrix.svg'))
 
     D = max(y_pred.max(), y_true.max()) + 1
     w = np.zeros((D, D), dtype=np.int64)
+
     # Confusion matrix.
     for i in range(y_pred.size):
         w[y_pred[i], y_true[i]] += 1
@@ -338,6 +344,69 @@ def plot_confusion_matrix(y_true, y_pred, save_dir):
     a = ind[0].tolist()
     b = ind[1].tolist()
     print(np.array([a, b]))
+    plt.close()
+
+
+def feature_map(scan, layer, depth, exp, weights):
+    encoder = nets.encoder()
+    encoder.load_weights(weights)
+    model = Model(inputs=encoder.inputs, outputs=encoder.layers[layer].output)
+    
+    # load image
+    img = predict.get_image(
+        predict.get_list_per_type(cfg.train_directory, scan), 1)
+    img = np.expand_dims(img, axis=-1)
+    img = np.expand_dims(img, axis=0)
+
+    # get prediction
+    feature_maps = model.predict(img)
+    
+    # immagine da plottare
+    square = math.sqrt(depth)
+    if isinstance(square, float):
+        square = int(square + 1)
+    ix = 1
+    for _ in range(square):
+        for _ in range(square):
+            # specify subplot and turn of axis
+            plt.subplot(square, square, ix)
+            # plot filter channel in grayscale
+            try:
+                plt.imshow(feature_maps[0, :, :, ix-1])
+            except:
+                plt.imshow(np.zeros((feature_maps.shape[1], feature_maps.shape[1]), dtype=np.uint8))
+            plt.axis('off')
+            ix += 1
+        plt.subplots_adjust(wspace=0.1, hspace=0, left=0,
+                            right=1, bottom=0, top=1)
+
+    plt.figure(frameon=False, figsize=(30, 30))
+
+    # plot all
+    square = math.sqrt(depth)
+    if isinstance(square, float):
+        square = int(square + 1)
+    ix = 1
+    for _ in range(square):
+        for _ in range(square):
+            # specify subplot and turn of axis
+            plt.subplot(square, square, ix)
+            # plot filter channel in grayscale
+            try:
+                plt.imshow(feature_maps[0, :, :, ix-1])
+            except:
+                plt.imshow(np.zeros((feature_maps.shape[1], feature_maps.shape[1]), dtype=np.uint8))
+            plt.axis('off')
+            ix += 1
+        plt.subplots_adjust(wspace=0.1, hspace=0, left=0,
+                            right=1, bottom=0, top=1)
+    # show the figure
+
+    os.makedirs(os.path.join(cfg.figures, cfg.exp,
+                             'feature_maps'), exist_ok=True)
+    plt.savefig(os.path.join(cfg.figures, cfg.exp, 'feature_maps',
+                             'conv_layer_' + scan + '_' + str(layer) + '.svg'))
+    plt.close()
 
 
 if __name__ == "__main__":
