@@ -43,6 +43,7 @@ def plot_ae_tsne(encoder, weights, figures, dataset, test_dataset, epoch=''):
     plt.scatter(embedding[:, 0], embedding[:, 1],
                 c=y_test_pred, s=20, cmap='brg')
     plt.savefig(os.path.join(figures, 'tsne_encoder_' + epoch + '.svg'))
+
     plt.close()
 
     print('saved scatter plot ae')

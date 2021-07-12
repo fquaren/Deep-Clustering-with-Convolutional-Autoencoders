@@ -5,7 +5,7 @@ from keras.engine.topology import InputSpec, Layer
 from tensorflow.keras import initializers
 
 
-def autoencoder(input_shape=(128, 128, 1), filters=[16, 32, 32, 30]):
+def autoencoder(input_shape=(128, 128, 1), filters=[16, 32, 32, 10]):
 
     input_img = Input(shape=input_shape)
 
@@ -28,7 +28,7 @@ def autoencoder(input_shape=(128, 128, 1), filters=[16, 32, 32, 30]):
     return Model(inputs=input_img, outputs=decoded, name='CAE'), Model(inputs=input_img, outputs=encoded, name='CE')
 
 
-def encoder(input_shape=(128, 128, 1), filters=[16, 32, 32, 30]):
+def encoder(input_shape=(128, 128, 1), filters=[16, 32, 32, 10]):
 
     input_img = Input(shape=input_shape)
 

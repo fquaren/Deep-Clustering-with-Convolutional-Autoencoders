@@ -26,7 +26,9 @@ tables = '/home/fquaren/unimib/tesi/data/tables'
 figures = '/home/fquaren/unimib/tesi/reports/figures'
 experiments = '/home/fquaren/unimib/tesi/experiments'
 
-exp = 'DCEC_12_30emb'
+exp = 'DCEC_12_10emb'
+
+best_acc_ae = 0.56
 
 cae_models = os.path.join(models, exp, 'cae')
 cae_weights = os.path.join(models, exp, 'cae', 'cae_weights')
@@ -57,7 +59,7 @@ tol = 0.001
 gamma = 0.001
 index = 0
 
-dcec_optim = Adam(learning_rate=1e-6)
+dcec_optim = Adam(learning_rate=1e-4)
 
 # Pandas dataframe
 d = {
@@ -68,6 +70,22 @@ d = {
     'val_clustering_loss': [],
     'reconstruction_loss': [],
     'val_reconstruction_loss': [],
+    # 'train_acc': [],
+    # 'val_acc': [],
+    # 'train_nmi': [],
+    # 'val_nmi': [],
+    # 'train_ari': [],
+    # 'val_ari': []
+}
+
+dec_d = {
+    'iteration': [],
+    # 'train_loss': [],
+    # 'val_loss': [],
+    'clustering_loss': [],
+    'val_clustering_loss': [],
+    # 'reconstruction_loss': [],
+    # 'val_reconstruction_loss': [],
     # 'train_acc': [],
     # 'val_acc': [],
     # 'train_nmi': [],
