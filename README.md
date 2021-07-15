@@ -1,4 +1,4 @@
-# Baseline implementation of deep clustering with convolutional autoencoders for image classification
+# Baseline Implementation of Deep Clustering with Convolutional Autoencoders for Image Classification
 
 ![alt text](https://github.com/fquaren/Deep-Clustering-with-Convolutional-Autoencoders/blob/master/scans.svg?raw=true)
 
