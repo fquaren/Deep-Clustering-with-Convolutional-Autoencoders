@@ -3,7 +3,7 @@ from keras.callbacks import EarlyStopping, ModelCheckpoint
 import nets
 
 scans = ['CT', 'MRI', 'PET']
-n_clusters = 3  
+n_clusters = 3
 
 # Paths
 processed_data = '/home/fquaren/unimib/tesi/data/processed/'
