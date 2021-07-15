@@ -1,0 +1,41 @@
+\documentclass[a4paper,12pt,margin=1in]{book}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{svg}
+\graphicspath{ {./images/} }
+\usepackage{biblatex} 
+\addbibresource{bibliography.bib}
+\usepackage{float}
+
+\begin{document}
+
+\mainmatter
+
+\chapter*{Acknowledgements}
+
+\thispagestyle{empty}
+
+I want to thank prof. Marco Paganoni and Elisabetta De Bernardi for the opportunity they offered me. I thank particularly Elisabetta for her constant presence and guidance throughout the duration of this work. It has been a pleasure working with her. I also want to thank my colleagues at Orobix for continuously inspiring and supporting me, even outside the office.
+
+Finally, I want to thank my family and, in particular, my parents, that constantly and unconditionally supported me throughout my journey.
+
+\newpage\thispagestyle{empty}
+
+
+\tableofcontents
+
+\addcontentsline{toc}{chapter}{Abstract}
+
+\include{./TeX_files/chapter01}
+\include{./TeX_files/chapter02}
+\include{./TeX_files/chapter03}
+\include{./TeX_files/chapter04}
+\include{./TeX_files/chapter05}
+\include{./TeX_files/chapter06}
+
+\backmatter
+% bibliography, glossary and index would go here.
+
+\printbibliography
+
+\end{document}

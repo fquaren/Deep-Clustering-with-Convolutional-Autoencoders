@@ -1,0 +1,208 @@
+\chapter{Experiments}
+
+\begin{figure}[H]
+  \centering
+  \includesvg[width=13cm]{dataset.svg}
+  \caption{Examples of some images from the dataset.}
+  \label{dataset}
+\end{figure}
+
+\section{Dataset}
+
+The proposed DEC and DCEC methods are evaluated on a custom dataset composed of images from three different medical imaging source: CT, MRI and PET. These are 2D gray-scale images of the head of dimension 128x128 pixels, see \ref{dataset} for some examples. The dataset is being divided into training, validation and testing datasets with 70:10:20 ratio. The number of images composing the dataset is reported in Table \ref{table:dataset}. 
+\begin{table}[H]
+    \centering
+    \begin{tabular}{l|llll} \hline
+        \textbf{Images} & \textbf{Training} & \textbf{Validation} & \textbf{Testing} & \textbf{Total} \\ \hline
+        CT  & 213      & 35         & 106     & 354   \\ \hline
+        MRI & 213      & 35         & 106     & 354   \\ \hline
+        PET & 198      & 29         & 56      & 283  \\ \hline
+    \end{tabular}
+    \caption{Number of images in the dataset.}
+    \label{table:dataset}
+\end{table}
+
+\subsection{Data preparation}
+
+All the images were coregistered to a common atlas in order to reduce variability and help training. Also, all images have been normalized in intensity. No data augmentation has been used during our experiments.
+
+\section{Experiments setup}
+
+We investigated the performance of DEC and DCEC methods and compared them to a basic $k$-means on the features extracted after pretraining the CAE. 
+The CAE is symmetrical and the encoder part is composed of three 2D convolutional layers, one flatten layer and the embedded fully connected layer. The decoder part reflects the encoder and the transpose convolutional layers substitute the convolutional ones.
+We utilize convolutional layers with stride instead of convolutional layers followed by pooling layers in the encoder, and convolutional transpose layers with stride in the decoder. This because the convolutional (transpose) layer with stride allow the network to learn spacial subsampling (upsampling) from data, leading to higher transformation capability.
+After preliminary testing (not shown) we choose the following architecture, see the \ref{table_CAE} for all the details.
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{clllll} \hline
+        \textbf{Layer} & \textbf{Dimensions} & \textbf{Filters} & \textbf{Kernel size} & \textbf{Stride} &\textbf{Params} \\ \hline
+        Input    & 128 x 128  & 1       & None        & None   & 0                \\ \hline
+        Conv1    & 32 x 32    & 16      & 5 x 5       & 4      & 416              \\ \hline
+        Conv2    & 8 x 8      & 32      & 5 x 5       & 4      & 12832            \\ \hline
+        Conv3    & 4 x 4      & 32      & 3 x 3       & 2      & 9248             \\ \hline
+        Flatten  & 512        & None    & None        & None   & 0                \\ \hline
+        Embedded & 3          & None    & None        & None   & 1539             \\ \hline
+        Linear   & 512        & None    & None        & None   & 2048             \\ \hline
+        Reshape  & 4 x 4      & 32      & None        & None   & 0                \\ \hline
+        Deconv3  & 8 x 8      & 32      & 3 x 3       & 2      & 9248             \\ \hline
+        Deconv2  & 32 x 32    & 16      & 5 x 5       & 4      & 12816            \\ \hline
+        Deconv1  & 128 x 128  & 1       & 5 x 5       & 4      & 401              \\ \hline
+    \end{tabular}
+    \label{table_CAE}
+    \caption{Convolutional AutoEncoder (CAE) architecture.}
+\end{table}
+
+\begin{figure}[H]
+    \centering
+    \includesvg[width=9cm]{DEC.svg}
+    \caption{DEC architecture.}
+\end{figure}
+
+The embedding layer dimension of the CAE for both DEC and DCEC is initially set at 3. The architecture for DEC is then described in table \ref{table_DEC}. The architecture of DCEC is the same as CAE with the clustering layer connected to the Embedded layer. During our experiments we also tried to change the dimension of the embedded layer. See below for the results.
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{clllll} \hline
+        \textbf{Layer} & \textbf{Dimensions} & \textbf{Filters} & \textbf{Kernel size} & \textbf{Stride} & \textbf{Params} \\ \hline
+        Input      & 128 x 128  & 1       & None        & None   & 0                \\ \hline
+        Conv1      & 32 x 32    & 16      & 5 x 5       & 4      & 416              \\ \hline
+        Conv2      & 8 x 8      & 32      & 5 x 5       & 4      & 12832            \\ \hline
+        Conv3      & 4 x 4      & 32      & 3 x 3       & 2      & 9248             \\ \hline
+        Flatten    & 512        & None    & None        & None   & 0                \\ \hline
+        Embedded   & 3          & None    & None        & None   & 1539             \\ \hline
+        Clustering & 3          & None    & None        & None   & 3                \\ \hline
+    \end{tabular}
+    \caption{DEC architecture.}
+    \label{table_DEC}
+\end{table}
+
+\subsubsection{Evaluation metrics}
+
+All clustering methods are evaluated by Unsupervised Clustering Accuracy (ACC) and Normalized Mutual Information (NMI) which are widely used in unsupervised learning scenarios, as previously mentioned in Section 1.3. 
+
+\section{Results}
+
+\subsection{Pretraining CAE}
+
+First we report the results from the pretraining. The autoencoder, even with such a small dimension for the embedded layer, was able to reconstruct, albeit not perfectly, the input image. Below, in Figure \ref{fig:pred_CAE} we can see on the left of each pair the original image and on the right the one reconstructed. Also, looking at the training and validation error during training, reported in the Figure \ref{fig:metrics_pretrain}, we are confident that there was no overfitting on the training data. 
+
+\begin{figure}[H]
+    \centering
+    \includesvg[width=10cm]{pretrain_metrics_3.svg}
+    \caption{Pretraining MSE error for the autoencoder with embedding space dimension 3. Lowest values: \texttt{train loss:0.0025}, \texttt{val loss:0.0024}}
+    \label{fig:metrics_pretrain}
+\end{figure}
+
+We report then in Table \ref{table:result_pretrain_3} the values of the two metrics we are considering to evaluate the results. That is, we performed a $k$-means initialization on the features from the embedded layer and calculated the ACC and NMI metrics.
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{c|lll} \hline
+        \textbf{Method}     & \textbf{ACC}          &  \textbf{NMI} &  \textbf{MSE error}      \\ \hline
+        $k$-means+CAE  & 0.622      & 0.392    & 0.0024   \\ \hline
+    \end{tabular}
+    \caption{Results after pretraining. Embedded dimension 3.}
+    \label{table:result_pretrain_3}
+\end{table}
+
+\begin{figure}[H]
+    \centering
+    \includesvg[width=10cm]{CT_ae_pred.svg}
+    \includesvg[width=10cm]{MRI_ae_pred.svg}
+    \includesvg[width=10cm]{PET_ae_pred.svg}
+    \caption{On the left the original image, on the right the image predicted by the CAE.}
+    \label{fig:pred_CAE}
+\end{figure}
+
+We also plotted in Figure \ref{fig:TSNE_UMAP_3} the results from the TSNE and UMAP projection of the embedding space onto a 2D plane to judge the quality of the clustering. While from the TSNE we can see that the clustering is not perfect but the three classes are clearly separated in different regions of the space, the UMAP plot shows how the points are not perfectly divided into the Voronoi cells. This is expected from an accuracy around 50\%.
+
+\begin{figure}[H]
+    \centering
+    \includesvg[width=6cm]{images/tsne_encoder_3.svg}
+    \includesvg[width=6cm]{images/umap_encoder_3.svg}
+    \caption{UMAP with Voronoi cells and TSNE projections from 3-dimensional features from the \textit{pretrained autoencoder} embedded layer. }
+    \label{fig:TSNE_UMAP_3}
+\end{figure}
+
+\subsubsection{Finetuning DEC and DCEC}
+
+As mentioned before we tested two different finetuning methods, DEC and DCEC. The results from these tests are shown in Table \ref{table:result_3}. We can clearly see that DEC achieves the best \textit{accuracy} and \textit{NMI}. The DCEC doesn't improve upon the results from the CAE. This is probably due to the fact that the reconstruction of the image is not of enough quality for the algorithm to be able to perform flawlessly. Nether the less, the reconstructed images are not worst than the one produced after pretraining. The prediction from DCEC are shown in Figure \ref{fig:pred_DCEC_3}.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{c|llll} \hline
+\textbf{Method} & \textbf{ACC} & \textbf{NMI} & \textbf{MSE error} & \textbf{KL div} \\ \hline
+% $k$-means+CAE  & 0.622      & 0.392   & 0.0024 &   / \\ \hline
+DEC  & \textbf{0.805}  & \textbf{0.613} &  & 0.03694 \\ \hline
+DCEC & 0.638  & 0.412 & 0.00171 & 0.11211  \\ \hline
+\end{tabular}
+\caption{Comparison of results of all methods. Embedded dimension 3.}
+\label{table:result_3}
+\end{table}
+
+Regarding the quality of the clustering, in Figure \ref{fig:TSNE_UMAP_finetuning_3} we can see the results of TSNE and UMAP projections for both the DEC and DCEC. These clustering plots reflects the results from table \ref{table:result_3}. 
+
+\begin{figure}[H]
+    \centering
+    \includesvg[width=6cm]{images/tsne_encoder_DEC_3.svg}
+    \includesvg[width=6cm]{images/umap_encoder_DEC_3.svg}
+    \includesvg[width=6cm]{images/tsne_encoder_DCEC_3.svg}
+    \includesvg[width=6cm]{images/umap_encoder_DCEC_3.svg}
+    \caption{UMAP with Voronoi cells and TSNE projections from 3-dimensional features from the \textit{finetuned autoencoder} embedded layer. DEC on the first row, DCEC on the second one.}
+    \label{fig:TSNE_UMAP_finetuning_3}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includesvg[width=10cm]{CT_DCEC_pred_3.svg}
+    \includesvg[width=10cm]{MRI_DCEC_pred_3.svg}
+    \includesvg[width=10cm]{PET_DCEC_pred_3.svg}
+    \caption{On the left the original image, on the right the image predicted by the DCEC.}
+    \label{fig:pred_DCEC_3}
+\end{figure}
+
+\subsection{Different architectures for the autoencoder}
+
+We then performed a series of tests varying the dimension of the embedding space, in particular we tested autoencoders with 10 and 30 dimensions for the embedded layer, leaving the network architecture unchanged. The Table \ref{table_10_30} shows the results we obtained.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lllllc} \hline
+\textbf{Method} & \textbf{ACC} & \textbf{NMI} & \textbf{MSE error} & \textbf{KL div} & \textbf{Embedded dim} \\ \hline
+$k$-means+CAE  & 0.656 & 0.491 & 0.00170 &  & \\ 
+DEC  & 0.659  & \textbf{0.548}  &  & 0.06359 & 10  \\ 
+DCEC & \textbf{0.665}  & 0.498  & 0.00311 & 0.09366 &   \\ \hline
+$k$-means+CAE & 0.578 & 0.414 & 0.00130 &  &  \\ 
+DEC  & \textbf{0.654}  &  \textbf{0.530} &  & 0.06445 & 30  \\ 
+DCEC & 0.605  &  0.458 & 0.02312 & 0.08776 & \\ \hline 
+\end{tabular}
+\caption{Results from test with different embedding space dimension.}
+\label{table_10_30}
+\end{table}
+
+\subsubsection{Pretraining}
+
+Comparing the results from the pretraining phase, we can see how the accuracy increases when we go from 3 to 10 for the dimension of the autoencoder, while there's a drop from 10 to 30. The better performance with dimension 10 is clearly explainable by the fact that with this architecture the autoencoder can more easily reconstruct the image. The lower performance from the architecture with dimension 30 can be explained remembering that if the embedded layer is too large the autoencoder can learn feature that are not characteristic but that could be related to the noise in the images. In particular, for our autoencoder an embedded layer with dimension 30 is too large for this particular dataset. This can be seen in the plot in Figure \ref{fig:acc_cae}. Also, the MSE error values confirm these results.
+
+\begin{figure}[H]
+    \centering
+    \includesvg[width=10cm]{images/accuracy_cae.svg}
+    \caption{Accuracy of CAE for different dimensions of embedded layer.}
+    \label{fig:acc_cae}
+\end{figure}
+
+\subsubsection{Finetuning}
+
+Regarding the results from the finetuning stages, the best results for DEC are achieved in the first experiment with the embedded with dimension 3. This is also reported in \cite{xie2016unsupervised}, where it's shown that the embedded with dimension equal to the number of clusters is the one that performs the best. 
+
+The results for DCEC show that the best performance is achieved with embedding dimension equal to 10. This is probably due to the fact that the reconstruction is helped by the larger number of nodes. The performance for the autoencoder with embedding space dimension 30 is lower than the one with dimension 3 or 10 and this is, as mentioned earlier, explained by the fact that the autoencoder has mapped to the embedding space some features that are not representative for the input image.
+
+\begin{figure}[H]
+    \centering
+    \includesvg[width=10cm]{images/accuracy_dec.svg}
+    \caption{Accuracy of DEC and DCEC for different dimensions of embedded layer.}
+    \label{fig:acc_cae}
+\end{figure}
+
+The NMI metric follows the same trend as the accuracy both for the DEC and DCEC finetuning stages.

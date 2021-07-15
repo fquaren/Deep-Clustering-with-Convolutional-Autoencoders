@@ -1,9 +1,0 @@
-ct 	1,2,4 	vs 	3,5
-mri 	1,6 	vs 	2,3,5
-pet	1,2,3,4
-
-
-train: ct-2, ct-3, ct-5, mri-2, mri-1, mri-6, pet-2, pet-3
-val: ct-4, mri-3, pet-4
-test: ct-1, mri-5, pet-1
-

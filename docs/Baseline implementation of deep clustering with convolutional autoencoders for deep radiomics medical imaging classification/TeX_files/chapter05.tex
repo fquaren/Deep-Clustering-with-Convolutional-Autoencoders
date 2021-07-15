@@ -1,0 +1,9 @@
+\chapter{Conclusions}
+
+In this thesis we tested two methods, DEC \cite{xie2016unsupervised} and DCEC \cite{10.1007/978-3-319-70096-0_39}, as clustering algorithms to classify in an unsupervised way images from three different classes (CT, MRI and PET). 
+
+Firstly, we did not report the results, but we carried on extensive experiments to find the optimal autoencoder architecture that would allow us to both reconstruct the images and keep the smallest possible dimension for the embedded layer. Also, the chosen autoencoder is the best because of its depth. In fact, a deeper autoencoder performed worst because the feature we are interested come from the texture of the image, not the complex structures that a deep autoencoder might learn. Moreover, a shallower autoencoder could not map effectively the images into the embedding space. 
+
+Regarding the finetuning stage, DEC has proven to be the best approach for our case. The key to the success of this method is in the finetuning stage where it discards completely the decoder and focuses solely on the clustering metric. DCEC didn't reach the same performance and we think that this is due to the fact that the small number of dimensions for the embedded layer drastically compromises the approach. This is the main fault for this approach: the limited number of classes impedes the achievement of better performances.
+
+A future development for this experiments would be to test more approaches related to DEC \cite{xie2016unsupervised}. We are currently testing the APCS-DA method \cite{Guo2020AdaptiveSD} from X. Guo et al., where data augmentation and self-pacing strategies are used in order to achieve better performances for the clustering accuracy. An other further step would be to start implement the current state of the art in self-supervised learning with contrastive learning, such as \cite{grill2020bootstrap}. 

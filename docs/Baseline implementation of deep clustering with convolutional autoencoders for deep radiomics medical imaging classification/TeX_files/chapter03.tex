@@ -1,0 +1,92 @@
+\chapter{Methods}
+
+\section{Convolutional autoencoders}
+
+As mentioned in Chapter 2, an autoencoder is generally composed of two sections, corresponding to the encoder $f_W(\cdot)$ and the decoder $g_U(\cdot)$ respectively. It aims to fit an input sample by minimizing the mean square error (MSE) between its input and output over all samples, i.e.
+\begin{equation}
+    \min_{W, U} \frac{1}{n} \sum_{i=1}^n ||g_U (f_W(x_i))-x_i||_2^2
+\end{equation}
+Convolutional AutoEncoders (CAE) are formed by convolutional layers stacked on the input images. These layers extract hierarchical features from the input. The features extracted from the last convolutional layer are then flattened to form a vector, followed by a fully connected layer with only a small number of units (see Chapter 4 for details). This central layer is called the embedded layer. The input 2D image is thus transformed into an a vector of a lower dimension feature space. This vector is then transformed back into a 2D image via a symmetrical model where the convolutional layers are being replaced by convolutional transpose layers. 
+
+The parameters of the encoder $h = F_w(x)$ and decoder $x' = G_{w'}(h)$ are updated by minimizing the reconstruction error, defined as
+\begin{equation}
+    L_r = \frac{1}{n} \sum_{i=1}^n ||G_{w'} (F_w(x_i))-x_i||_2^2
+    \label{L_r}
+\end{equation}
+where n is the number of images in the dataset and $x_i \in \mathbb{R}^2$ is the $i$th image.
+
+The key factor in this implementation is the reduced dimension of the embedded layer. In fact, if the embedded layer is large enough, the network may be able to copy its input to output, leading to the learning of useless features. Such constraint forces the model to capture only the most salient features of the data. The idea here is to create an autoencoder where the dimension of the embedding is close to the number of clusters that we hope to identify.
+
+This way the network can be trained in an end-to-end manner without the need of any classification labels. The learned embedded representations are proved to be cluster-oriented.
+
+% NB: Another factor is that we utilize convolutional layer with stride instead of convolutional layer followed by pooling layer in the encoder, and convolutional transpose layer with stride in the decoder. Because the convolutional (transpose) layers with stride allow the network to learn spacial subsampling (upsampling) from data, leading to higher capability of transformation.
+
+In this baseline implementation of the method we don't utilize any regularization layer such as BatchNormalization or Dropout layers.
+
+\section{Deep embedded clustering (DEC)}
+
+We consider now the problem of clustering a set of $n$ points ${x_i \in X}_{i=1}^n$ into $k$ clusters, each represented by a centroid $\mu_j$, $j = 1, ... , k$. Instead of clustering directly the data space $X$, the considered method proposes first to transform the data with a non-linear mapping $f_{\theta} : X \rightarrow Z$, where $\theta$ are the learnable parameters and $Z$ is the latent \textit{feature space}. In our case the non-linear mapping $f_{\theta}$ is the encoder section of the CAE and the dimension of the feature space is defined by the dimension of the embedded layer.
+
+The considered algorithm (DEC) \cite{xie2016unsupervised} clusters data by simultaneously learning a set of $k$ clusters centers ${\mu_j \in Z}_{j=1}^k$ in the feature space $Z$ and the parameters $\theta$ if the encoder that maps the 2D images into Z. DEC is composed of two phases: firstly we initialize the weights training the CAE, next we optimize the parameters of the encoder (i.e. clustering), where we iterate between computing an auxiliary target distribution and minimizing the Kullback-Leibler (KL) divergence to it. 
+
+\subsection{Clustering with KL divergence}
+
+As mentioned above the proposed method aims to improve the clustering using an unsupervised algorithm that alternates between two steps. In the first step, we compute a soft assignment between the embedded points and the cluster centroids. In the second step, we update the encoder mapping $f_{\theta}$ and refine the cluster centroids by learning from current high confidence assignments using an auxiliary target distribution. This process is carried on until convergence is reached.
+
+\subsubsection{Soft assignment}
+
+The method uses Student's $t$-distribution as a way to measure the similarity between embedded points $z_i$ and centroid $\mu_j$:
+\begin{equation}
+    q_{i j} = \frac{(1+||z_i - \mu_j||^2/\alpha)^{-\frac{\alpha + 1}{2}}}{\sum_{j'}(1+||z_i - \mu_j||^2/\alpha)^{-\frac{\alpha + 1}{2}}}
+\end{equation}
+where $z_i = f(\theta) \in Z$ corresponds to $x_i \in X$ after embedding, $\alpha$ are the degrees of freedom of the Student's $t$-distribution and $q_{i j}$ cab be interpreted as the probability o assigning sample $i$ to the cluster $j$ (i.e. soft assignment). In all experiments $\alpha$ is set to 1.
+
+% NB: Since we cannot cross-validate α on a validation set in the unsupervised setting, and learning it is superfluous (van der Maaten, 2009), we let α = 1 for all experiments.
+
+\subsubsection{KL divergence minimization}
+
+The model is trained by matching the soft assignment to the target distribution. The method defines as its objective the minimization of the KL divergence loss between the soft assignments $q_i$ and the auxiliary distribution $p_i$ as follows:
+\begin{equation}
+    L_c = KL(P | Q) = \sum_i\sum_j p_{i j} log\frac{p_{i j}}{q_{i j}}
+    \label{L_c}
+\end{equation}
+The choice of target distributions P is crucial for DEC’s performance. 
+
+% NB A naive approach would be setting each p i to a delta distribution (to the nearest centroid) for data points above a confidence threshold and ignore the rest. However, because q i are soft assignments, it is more natural and flexible to use softer probabilistic targets.
+
+In our experiments, we compute $p_i$ by first raising $q_i$ to the second power and then normalizing by frequency per cluster:
+\begin{equation}
+    p_{i j} = \frac{q_{i j}^2 / f_j}{\sum_{j'} q_{i j}^2 / f_j} 
+\end{equation}
+where $f_j = \sum_i q_{i j}$ are soft cluster frequencies. In particular, this target distribution has the following proprieties: (1) strengthen predictions (i.e., improve cluster purity), (2) puts more emphasis on data points assigned with high confidence, and (3) normalize loss contribution of each centroid to prevent large clusters from distorting
+the hidden feature space. Please refer to \cite{xie2016unsupervised} for in depth discussions.
+
+\subsubsection{Initialization and optimization}
+
+We first pretrain the parameters of CAE to get meaningful target distribution. After pretraining, the cluster centers are initialized with $k$-means on the embedded features of all images to obtain $k$ initial centroids. Then we discard the decoder section and we jointly optimize the cluster centers {$\mu_j$} and the parameters of the encoder using Adam. The gradients of L with respect to the feature space embedding of each data point $\partial L / \partial z_i$ and each cluster centroid $\partial L / \partial \mu_j$ are computed and then passed down to the encoder and used in standard back-propagation to compute the encoder's parameter gradient $\partial L / \partial \theta$. We used an early stopping mechanism to stop the training once less than $tol\%$ of points change cluster assignment between two consecutive iterations. 
+
+\section{Deep Convolutional Embedded Clustering (DCEC)}
+
+A possible issue with the previously described approach is that the embedded feature space in DEC may be distorted by only using clustering oriented loss \ref{L_c}. To this end, the method described in \cite{10.1007/978-3-319-70096-0_39} proposes to add the reconstruction loss of autoencoders to the objective and so optimize \ref{L_r} along with clustering loss \ref{L_c} simultaneously. The autoencoders should preserve the local structure of data generating distribution, avoiding the corruption of feature space.
+
+\subsection{Structure of Deep Convolutional Embedded Clustering}
+
+The DCEC structure is composed of CAE with a clustering layer connected to the embedded layer of the autoencoder. The clustering layer then maps each embedded point $z_i$ coming from the input image $x_i$ into a soft label. The clustering loss $L_c$ is defined as \ref{L_c} between the distribution of soft labels and the predefined target distribution. This way the CAE is used to learn embedded features and the clustering loss guides the embedded features to be prone to forming clusters. 
+
+The objective of DCEC is then:
+\begin{equation}
+    L = L_r + \gamma L_c
+    \label{Loss}
+\end{equation}
+where $\gamma > 0$ is a coefficient that controls the degree of distorting embedded space. When $\gamma = 1$ and $L_r \equiv 0$, \ref{Loss} reduces to the objective of DEC \cite{xie2016unsupervised}.
+
+\subsection{Reconstruction Loss for Local Structure Preservation}
+
+As described in Section 3.2.1, DEC \cite{xie2016unsupervised} abandons the decoder and finetunes the encoder using only the clustering loss \ref{L_r}. It's possible however that this kind of finetuning could distort the embedded space, weakening the representativeness of the embedded features extracted and in so doing hurting the clustering performance. Keeping the decoder and simultaneously optimizing the two objectives should prevent this issue.
+
+It's important to notice that the parameter $\gamma$ is crucial as it prevents the clustering loss $L_c$ to cause distortion. It's key that on the first iteration of the finetuning stage both the $L_c$ and the $L_r$ contribute with the same intensity to the update of the network weights.
+
+\subsection{Optimization}
+
+As for DEC we first pretrain the CAE by setting $\gamma = 0$ to achieve a meaningful target distribution. As in DEC, the cluster centers are then initialized with $k$-means on the embedded features of all images. Then $\gamma$ is set to a value of 0.01 and the weights of the autoencoder, cluster centers and target distribution $P$ as follows: $\partial L / \partial z_i$ and $\partial L / \partial \mu_j$ are computed and the weights and centers are updated by backpropagation and Adam; the target distribution $P$ serves as ground truth soft label but also depends on predicted soft label. Therefore, to avoid instability, P should not be updated at each iteration. In practice we update target distribution using all embedded points every T iterations. As with DEC, the training process terminates when the change of label assignments between two consecutive updates for target distribution is less than a threshold tolerance.
+
