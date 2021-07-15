@@ -26,10 +26,6 @@ def acc(y_true, y_pred):
     return result
 
 
-# def acc(y_true, y_pred):
-#     return accuracy_score(y_true=y_true, y_pred=y_pred)
-
-
 # Student's distribution (see paper)
 def target_distribution(q):
     weight = q ** 2 / q.sum(0)

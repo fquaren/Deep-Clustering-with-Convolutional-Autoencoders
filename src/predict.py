@@ -22,30 +22,15 @@ def get_image(names, n):
     return image
 
 
-# def pred_cae(net, weights, directory, scans, figures, exp, n):
-#     '''
-#     Predict the output of the net from a test image and save the prediction
-#     (one for each scan).
-#     '''
-#     for scan in scans:
-#         autoencoder, encoder = net
-#         autoencoder.load_weights(weights)
-#         img = get_image(get_list_per_type(directory, scan), n)
-#         img = cv2.resize(img, dsize=(128, 128), interpolation=cv2.INTER_LANCZOS4)
-#         pred_img = autoencoder.predict(img.reshape((1,) + img.shape + (1,)))
-#         pred_img = pred_img.reshape((128, 128))
-#         # plot prediction and save image
-#         plt.figure(figsize=(14, 7))
-#         plt.subplot(1, 2, 1)
-#         plt.imshow(img)
-#         plt.subplot(1, 2, 2)
-#         plt.imshow(pred_img)
-#         os.makedirs(os.path.join(figures, exp, 'cae'), exist_ok=True)
-#         plt.savefig(os.path.join(figures, exp, 'cae', scan+'_cae_pred.png'))
-#     print('Prediction on test images done.')
-
-
-def pred_ae(net, weights, directory, exp=cfg.exp, n=random.randint(0, 10), scans=cfg.scans, figures=cfg.figures,):
+def pred_ae(
+    net,
+    weights,
+    directory,
+    exp=cfg.exp,
+    n=random.randint(0, 10),
+    scans=cfg.scans,
+    figures=cfg.figures,
+        ):
     '''
     Predict the output of the net from a test image and save the prediction
     (one for each scan).
@@ -66,7 +51,7 @@ def pred_ae(net, weights, directory, exp=cfg.exp, n=random.randint(0, 10), scans
         plt.savefig(os.path.join(figures, exp, 'ae', scan + '_ae_pred.svg'))
         plt.close()
     print('Prediction on test images done.')
-    
+
 
 def pred_dcec(model, weights, directory, scans, figures, exp, n, iteration=None):
     '''
@@ -76,7 +61,8 @@ def pred_dcec(model, weights, directory, scans, figures, exp, n, iteration=None)
     for scan in scans:
         model.load_weights(weights)
         img = get_image(get_list_per_type(directory, scan), n)
-        img = cv2.resize(img, dsize=(128, 128), interpolation=cv2.INTER_LANCZOS4)
+        img = cv2.resize(img, dsize=(128, 128),
+                         interpolation=cv2.INTER_LANCZOS4)
         pred_img = model.predict(img.reshape((1,) + img.shape + (1,)))
         pred_img = pred_img[1].reshape((128, 128))
         # plot prediction and save image
@@ -89,13 +75,24 @@ def pred_dcec(model, weights, directory, scans, figures, exp, n, iteration=None)
             os.makedirs(os.path.join(figures, exp, 'dcec'), exist_ok=True)
             plt.savefig(os.path.join(figures, exp, 'dcec', scan+'.svg'))
         else:
-            os.makedirs(os.path.join(figures, exp, 'dcec', str(iteration)), exist_ok=True)
-            plt.savefig(os.path.join(figures, exp, 'dcec', str(iteration), scan+'.svg'))
+            os.makedirs(os.path.join(figures, exp, 'dcec',
+                                     str(iteration)), exist_ok=True)
+            plt.savefig(os.path.join(figures, exp, 'dcec',
+                                     str(iteration), scan+'.svg'))
         plt.close()
     print('Prediction on test images done.')
-    
 
-def init_kmeans(x, x_val, y, y_val, random_state, weights, n_clusters=3, verbose=True, model=nets.encoder()):
+
+def init_kmeans(
+    x,
+    x_val,
+    y, y_val,
+    random_state,
+    weights,
+    n_clusters=3,
+    verbose=True,
+    model=nets.encoder()
+        ):
     kmeans = KMeans(n_clusters=n_clusters, n_init=100, init='random')
     model.load_weights(weights)
     kmeans = kmeans
@@ -111,12 +108,12 @@ def init_kmeans(x, x_val, y, y_val, random_state, weights, n_clusters=3, verbose
         print('TRAIN ACC = {}; TRAIN NMI = {}'.format(
             np.round(acc(y, y_pred), 3),
             np.round(nmi(y, y_pred), 3)
-            )
+        )
         )
         print('TEST ACC = {}; TEST NMI = {}'.format(
             np.round(acc(y_val, y_val_pred), 3),
             np.round(nmi(y_val, y_val_pred), 3)
-            )
+        )
         )
         print('RANDOM STATE:', random_state)
 
@@ -127,11 +124,21 @@ def init_kmeans(x, x_val, y, y_val, random_state, weights, n_clusters=3, verbose
 
     test_acc = acc(y_val, y_val_pred)
     test_nmi = nmi(y_val, y_val_pred)
-    
+
     return y_pred, y_val_pred, centers, test_acc, test_nmi
 
 
-def init_kmeans_dcec(model, x, x_val, y, y_val, random_state, weights, n_clusters=3, verbose=True):
+def init_kmeans_dcec(
+    model,
+    x,
+    x_val,
+    y,
+    y_val,
+    random_state,
+    weights,
+    n_clusters=3,
+    verbose=True
+        ):
     kmeans = KMeans(n_clusters=n_clusters, n_init=100, init='random')
     model.load_weights(weights)
     kmeans = kmeans
@@ -147,12 +154,12 @@ def init_kmeans_dcec(model, x, x_val, y, y_val, random_state, weights, n_cluster
         print('TRAIN ACC = {}; TRAIN NMI = {}'.format(
             np.round(acc(y, y_pred), 3),
             np.round(nmi(y, y_pred), 3)
-            )
+        )
         )
         print('TEST ACC = {}; TEST NMI = {}'.format(
             np.round(acc(y_val, y_val_pred), 3),
             np.round(nmi(y_val, y_val_pred), 3)
-            )
+        )
         )
         print('RANDOM STATE:', random_state)
 
@@ -163,5 +170,5 @@ def init_kmeans_dcec(model, x, x_val, y, y_val, random_state, weights, n_cluster
 
     test_acc = acc(y_val, y_val_pred)
     test_nmi = nmi(y_val, y_val_pred)
-    
+
     return y_pred, y_val_pred, centers, test_acc, test_nmi

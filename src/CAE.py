@@ -9,15 +9,15 @@ import nets
 
 
 def pretrainCAE(
-        model,
-        x_train,
-        x_val,
-        batch_size,
-        pretrain_epochs,
-        my_callbacks,
-        cae_models,
-        optim
-            ):
+    model,
+    x_train,
+    x_val,
+    batch_size,
+    pretrain_epochs,
+    my_callbacks,
+    cae_models,
+    optim
+        ):
     autoencoder, encoder = model
     encoder.summary()
     autoencoder.summary()
@@ -55,6 +55,7 @@ if __name__ == "__main__":
     x_test = x_test.reshape(x_test.shape[0], 128, 128, 1)
     
     autoencoder, _ = cfg.cae
+    
     # pretrain CAE
     pretrainCAE(
         model=cfg.cae,
@@ -75,8 +76,6 @@ if __name__ == "__main__":
         random_state=None,
         weights=cfg.cae_weights,
     )
-
-    # visualization
 
     pred_ae(
         net=autoencoder,
@@ -101,8 +100,25 @@ if __name__ == "__main__":
         x_train,
         x_test
     )
-    # viz.feature_map(scan=cfg.scans[0], exp=cfg.exp, layer=1, depth=16, weights=cfg.cae_weights)
-    # viz.feature_map(scan=cfg.scans[0], exp=cfg.exp, layer=2, depth=32, weights=cfg.cae_weights)
-    # viz.feature_map(scan=cfg.scans[0], exp=cfg.exp, layer=3, depth=32, weights=cfg.cae_weights)
 
-
+    viz.feature_map(
+        scan=cfg.scans[0],
+        exp=cfg.exp,
+        layer=1,
+        depth=16,
+        weights=cfg.cae_weights
+    )
+    viz.feature_map(
+        scan=cfg.scans[0],
+        exp=cfg.exp,
+        layer=2,
+        depth=32,
+        weights=cfg.cae_weights
+    )
+    viz.feature_map(
+        scan=cfg.scans[0],
+        exp=cfg.exp,
+        layer=3,
+        depth=32,
+        weights=cfg.cae_weights
+    )

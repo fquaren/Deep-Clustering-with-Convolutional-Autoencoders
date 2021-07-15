@@ -10,9 +10,6 @@ import seaborn as sns
 from tqdm import tqdm
 import pandas as pd
 import config as cfg
-from nets import ClusteringLayer
-from build_and_save_features import load_dataset
-from metrics import acc, nmi, ari
 import umap
 from scipy.spatial import Voronoi
 import nets
@@ -76,7 +73,10 @@ def plot_ae_umap(encoder, weights, figures, train_dataset, dataset, epoch=''):
     max_x = max(test_embedding, key=lambda x: x[0])[0]
     max_y = max(test_embedding, key=lambda x: x[1])[1]
     centers2d = np.append(
-        centers2d, [[999, 999], [-999, 999], [999, -999], [-999, -999]], axis=0)
+        centers2d,
+        [[999, 999], [-999, 999], [999, -999], [-999, -999]],
+        axis=0
+    )
 
     vor = Voronoi(centers2d)
     regions, vertices = voronoi_finite_polygons_2d(vor)
@@ -85,7 +85,13 @@ def plot_ae_umap(encoder, weights, figures, train_dataset, dataset, epoch=''):
     for region in regions:
         polygon = vertices[region]
         plt.fill(*zip(*polygon), alpha=0.4)
-    plt.scatter(test_embedding[:, 0], test_embedding[:,1], c=y_test_pred, s=20, cmap='brg')
+    plt.scatter(
+        test_embedding[:, 0],
+        test_embedding[:, 1],
+        c=y_test_pred,
+        s=20,
+        cmap='brg'
+    )
     plt.scatter(centers2d[:, 0], centers2d[:, 1], c='black', s=100)
     plt.xlim((min_x - 1, max_x + 1))
     plt.ylim((min_y - 1, max_y + 1))
@@ -219,113 +225,11 @@ def plot_dcec_tsne(model, models_directory, figures, dataset):
         print('saved scatter plot ite_{}'.format(ite))
 
 
-def plot_train_metrics(file, save_dir):
-    '''
-    This function read a csv file containing the training metrics, plots them
-    and saves an image in the figures folder.
-    '''
-    data = pd.read_csv(file)
-
-    ite = data['iteration']
-    train_loss = data['train_loss']
-    val_loss = data['val_loss']
-    clust_loss = data['clustering_loss']
-    val_clust_loss = data['val_clustering_loss']
-    rec_loss = data['reconstruction_loss']
-    val_rec_loss = data['val_reconstruction_loss']
-    train_acc = data['train_acc']
-    val_acc = data['val_acc']
-    train_nmi = data['train_nmi']
-    val_nmi = data['val_nmi']
-    train_ari = data['train_ari']
-    val_ari = data['val_ari']
-
-    # losses
-    plt.figure(figsize=(30, 10))
-    plt.subplot(1, 3, 1)
-    x1 = ite
-    y1 = train_loss
-    y2 = val_loss
-    plt.plot(x1, y1)
-    plt.plot(x1, y2)
-    plt.title('L')
-    plt.ylabel('Loss')
-    plt.xlabel('Epoch')
-    plt.legend(['Train', 'Validation'])
-
-    plt.subplot(1, 3, 2)
-    x1 = ite
-    y1 = clust_loss
-    y2 = val_clust_loss
-    plt.plot(x1, y1)
-    plt.plot(x1, y2)
-    plt.title('Lc: clustering loss')
-    plt.ylabel('Loss')
-    plt.xlabel('Epoch')
-    plt.legend(['Train', 'Validation'])
-
-    plt.subplot(1, 3, 3)
-    x1 = ite
-    y1 = rec_loss
-    y2 = val_rec_loss
-    plt.plot(x1, y1)
-    plt.plot(x1, y2)
-    plt.title('Lr: reconstruction loss')
-    plt.ylabel('Loss')
-    plt.xlabel('Epoch')
-    plt.legend(['Train', 'Validation'])
-    plt.savefig(os.path.join(save_dir, 'train_val_loss'))
-
-    # other metrics
-    plt.figure(figsize=(30, 10))
-    plt.subplot(1, 3, 1)
-    x1 = ite
-    y1 = train_acc
-    y2 = val_acc
-    plt.plot(x1, y1)
-    plt.plot(x1, y2)
-    plt.title('Accuracy')
-    plt.ylabel('Acc')
-    plt.xlabel('Epoch')
-    plt.legend(['Train', 'Validation'])
-
-    plt.subplot(1, 3, 2)
-    x1 = ite
-    y1 = train_nmi
-    y2 = val_nmi
-    plt.plot(x1, y1)
-    plt.plot(x1, y2)
-    plt.title('NMI')
-    plt.ylabel('NMI')
-    plt.xlabel('Epoch')
-    plt.legend(['Train', 'Validation'])
-
-    plt.subplot(1, 3, 3)
-    x1 = ite
-    y1 = train_ari
-    y2 = val_ari
-    plt.plot(x1, y1)
-    plt.plot(x1, y2)
-    plt.title('ARI')
-    plt.ylabel('ARI')
-    plt.xlabel('Epoch')
-    plt.legend(['Train', 'Validation'])
-    plt.savefig(os.path.join(save_dir, 'train_val_acc_nmi_ari'))
-
-
-def test_dcec(model, x, y):
-    metrics = {}
-    test_q, _ = model.predict(x, verbose=0)
-    # test_p = target_distribution(test_q)
-    # test_loss = model.fit(x=x, y=[test_p, x], verbose=0)
-    y_test_pred = test_q.argmax(1)
-    metrics['test_acc'] = acc(y, y_test_pred)
-    metrics['test_nmi'] = nmi(y, y_test_pred)
-    metrics['test_ari'] = ari(y, y_test_pred)
-    return metrics, y_test_pred
-
-
-def plot_confusion_matrix(y_true, y_pred, save_dir=os.path.join(cfg.figures, cfg.exp)):
+def plot_confusion_matrix(
+    y_true,
+    y_pred,
+    save_dir=os.path.join(cfg.figures, cfg.exp)
+):
     matrix = confusion_matrix(y_true=y_true, y_pred=y_pred)
 
     plt.figure()
@@ -352,7 +256,7 @@ def feature_map(scan, layer, depth, exp, weights):
     encoder = nets.encoder()
     encoder.load_weights(weights)
     model = Model(inputs=encoder.inputs, outputs=encoder.layers[layer].output)
-    
+
     # load image
     img = predict.get_image(
         predict.get_list_per_type(cfg.train_directory, scan), 1)
@@ -361,7 +265,7 @@ def feature_map(scan, layer, depth, exp, weights):
 
     # get prediction
     feature_maps = model.predict(img)
-    
+
     # immagine da plottare
     square = math.sqrt(depth)
     if isinstance(square, float):
@@ -375,7 +279,12 @@ def feature_map(scan, layer, depth, exp, weights):
             try:
                 plt.imshow(feature_maps[0, :, :, ix-1])
             except:
-                plt.imshow(np.zeros((feature_maps.shape[1], feature_maps.shape[1]), dtype=np.uint8))
+                plt.imshow(
+                    np.zeros(
+                        (feature_maps.shape[1], feature_maps.shape[1]),
+                        dtype=np.uint8
+                        )
+                    )
             plt.axis('off')
             ix += 1
         plt.subplots_adjust(wspace=0.1, hspace=0, left=0,
@@ -396,7 +305,12 @@ def feature_map(scan, layer, depth, exp, weights):
             try:
                 plt.imshow(feature_maps[0, :, :, ix-1])
             except:
-                plt.imshow(np.zeros((feature_maps.shape[1], feature_maps.shape[1]), dtype=np.uint8))
+                plt.imshow(
+                    np.zeros(
+                        (feature_maps.shape[1], feature_maps.shape[1]),
+                        dtype=np.uint8
+                    )
+                )
             plt.axis('off')
             ix += 1
         plt.subplots_adjust(wspace=0.1, hspace=0, left=0,
@@ -411,72 +325,4 @@ def feature_map(scan, layer, depth, exp, weights):
 
 
 if __name__ == "__main__":
-    # x_test, y_test = load_dataset('x_test.npy', 'y_test.npy')
-
-    # cae, encoder = cfg.cae
-    # clustering_layer = ClusteringLayer(
-    #     cfg.n_clusters, name='clustering')(encoder.output)
-    # model = Model(
-    #     inputs=encoder.input, outputs=[clustering_layer, cae.output])
-    # model.compile(
-    #     loss=['kld', 'mse'], loss_weights=[cfg.gamma, 1], optimizer='adam')
-
-    # os.makedirs(os.path.join(cfg.figures, cfg.exp, 'cae'), exist_ok=True)
-    # os.makedirs(os.path.join(cfg.figures, cfg.exp, 'dcec'), exist_ok=True)
-    # # --- CAE ---
-    # # plot tsne after kmean init
-    # plot_cae_tnse(
-    #     autoencoder=cae,
-    #     encoder=encoder,
-    #     models_directory=os.path.join(cfg.models, cfg.exp, 'cae'),
-    #     figures=os.path.join(cfg.figures, cfg.exp, 'cae'),
-    #     dataset=x_test
-    # )
-
-    # # plot pretrain metrics
-    # plot_pretrain_metrics(
-    #     file=os.path.join(cfg.tables, 'cae_train_metrics.csv'),
-    #     save_dir=os.path.join(cfg.figures, cfg.exp, 'cae'),
-    # )
-
-    # # --- DCEC ---
-    # # plot tsne dcec iterations during training
-    # plot_dcec_tsne(
-    #     model=model,
-    #     models_directory=os.path.join(cfg.models, cfg.exp, 'dcec'),
-    #     figures=os.path.join(cfg.figures, cfg.exp, 'dcec'),
-    #     dataset=x_test
-    # )
-
-    # # plot train metrics
-    # plot_train_metrics(
-    #     file=os.path.join(cfg.tables, cfg.exp, 'dcec_train_metrics.csv'),
-    #     save_dir=os.path.join(cfg.figures, cfg.exp, 'dcec')
-    # )
-
-    # metrics, y_pred = test_dcec(model, x_test, y_test)
-    # plot_confusion_matrix(
-    #     y_true=y_test,
-    #     y_pred=y_pred,
-    #     save_dir=os.path.join(cfg.figures, cfg.exp, 'dcec')
-    # )
-    # print('final metrics:', metrics)
-
-    emb = [3, 10, 30]
-    acc_cae = [0.622, 0.656, 0.578]
-    acc_dec = [0.805, 0.659, 0.654]
-    acc_dcec = [0.638, 0.665, 0.605]
-
-    plt.figure()
-    plt.plot(emb, acc_dec, '-o', markersize=6)
-    plt.plot(emb, acc_dcec, '-o', markersize=6)
-    # plt.ylim(0.4, 1)
-    # plt.xlim(0, 35)
-    plt.title('Accuracy DEC and DCEC')
-    plt.xlabel('Embedding space dimension')
-    plt.ylabel('Acc')
-    plt.legend(['DEC', 'DCEC'])
-    plt.savefig(os.path.join(cfg.figures, cfg.exp, 'ae', 'accuracy_dec.svg'))
-    plt.close()
-
-# TODO https://machinelearningmastery.com/how-to-visualize-filters-and-feature-maps-in-convolutional-neural-networks/
+    pass

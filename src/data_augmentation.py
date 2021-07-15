@@ -42,7 +42,7 @@ def salt_and_pepper(image, prob=0.01):
     prob: Probability of the noise
     '''
     output = np.zeros(image.shape, np.uint8)
-    thres = 1 - prob 
+    thres = 1 - prob
     for i in range(image.shape[0]):
         for j in range(image.shape[1]):
             rdn = random.random()
@@ -80,7 +80,8 @@ def augmentation_on_train():
         # define a name for our new file
         dir_name = os.path.dirname(image_path)
         image_name = os.path.basename(image_path).split('.')[0]
-        new_file_path = os.path.join(dir_name, image_name+'_aug_'+str(i)+'.png')
+        new_file_path = os.path.join(
+            dir_name, image_name+'_aug_'+str(i)+'.png')
         # transformed_image = (transformed_image*255).astype(np.uint8)
         cv2.imwrite(new_file_path, transformed_image)
     print('data augmentation completed. added {} images'.format(num_files_desired))
@@ -91,7 +92,7 @@ def check_data(processed_data, processed_dirs, val_file_names, test_file_names):
     Print percentage images in train, val and test.
     '''
     train_file_names = [
-        f for f in listdir(os.path.join(processed_data, processed_dirs[0])) 
+        f for f in listdir(os.path.join(processed_data, processed_dirs[0]))
         if isfile(join(os.path.join(processed_data, processed_dirs[0]), f))
     ]
     # print dimensions datasets
@@ -103,8 +104,9 @@ def check_data(processed_data, processed_dirs, val_file_names, test_file_names):
         train_file_names), '= %.0f' % percTrain, '%')
     print('Number of validation images:', len(
         val_file_names), '= %.0f' % percVal, '%')
-    print('Number of test images:', len(test_file_names), '= %.0f' % percTest, '%')
+    print('Number of test images:', len(
+        test_file_names), '= %.0f' % percTest, '%')
 
 
 if __name__ == "__main__":
-    augmentation_on_train()
+    pass
