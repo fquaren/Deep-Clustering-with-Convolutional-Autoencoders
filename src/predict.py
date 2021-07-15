@@ -63,7 +63,7 @@ def pred_ae(net, weights, directory, exp=cfg.exp, n=random.randint(0, 10), scans
         plt.subplot(1, 2, 2)
         plt.imshow(pred_img[0])
         os.makedirs(os.path.join(figures, exp, 'ae'), exist_ok=True)
-        plt.savefig(os.path.join(figures, exp, 'ae', scan+'_ae_pred.png'))
+        plt.savefig(os.path.join(figures, exp, 'ae', scan + '_ae_pred.svg'))
         plt.close()
     print('Prediction on test images done.')
     
@@ -87,16 +87,16 @@ def pred_dcec(model, weights, directory, scans, figures, exp, n, iteration=None)
         plt.imshow(pred_img)
         if iteration is None:
             os.makedirs(os.path.join(figures, exp, 'dcec'), exist_ok=True)
-            plt.savefig(os.path.join(figures, exp, 'dcec', scan))
+            plt.savefig(os.path.join(figures, exp, 'dcec', scan+'.svg'))
         else:
             os.makedirs(os.path.join(figures, exp, 'dcec', str(iteration)), exist_ok=True)
-            plt.savefig(os.path.join(figures, exp, 'dcec', str(iteration), scan))
+            plt.savefig(os.path.join(figures, exp, 'dcec', str(iteration), scan+'.svg'))
         plt.close()
     print('Prediction on test images done.')
     
 
 def init_kmeans(x, x_val, y, y_val, random_state, weights, n_clusters=3, verbose=True, model=nets.encoder()):
-    kmeans = KMeans(n_clusters=n_clusters, n_init=100)
+    kmeans = KMeans(n_clusters=n_clusters, n_init=100, init='random')
     model.load_weights(weights)
     kmeans = kmeans
     kmeans.random_state = random_state
@@ -132,7 +132,7 @@ def init_kmeans(x, x_val, y, y_val, random_state, weights, n_clusters=3, verbose
 
 
 def init_kmeans_dcec(model, x, x_val, y, y_val, random_state, weights, n_clusters=3, verbose=True):
-    kmeans = KMeans(n_clusters=n_clusters, n_init=100)
+    kmeans = KMeans(n_clusters=n_clusters, n_init=100, init='random')
     model.load_weights(weights)
     kmeans = kmeans
     kmeans.random_state = random_state

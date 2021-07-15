@@ -34,12 +34,6 @@ def pretrainCAE(
     cfg.dict_metrics['train_loss'] = autoencoder.history.history['loss']
     cfg.dict_metrics['val_loss'] = autoencoder.history.history['val_loss']
 
-    pred_ae(
-        net=autoencoder,
-        weights=cfg.cae_weights,
-        directory=cfg.train_directory,
-    )
-
     # save metrics to csv
     df = pd.DataFrame(data=cfg.dict_metrics)
     df.to_csv(os.path.join(cfg.tables, cfg.exp, 'cae_train.csv'), index=False)
@@ -60,7 +54,8 @@ if __name__ == "__main__":
     x_val = x_val.reshape(x_val.shape[0], 128, 128, 1)
     x_test = x_test.reshape(x_test.shape[0], 128, 128, 1)
     
-    # # pretrain CAE
+    autoencoder, _ = cfg.cae
+    # pretrain CAE
     pretrainCAE(
         model=cfg.cae,
         x_train=x_train,
@@ -81,8 +76,13 @@ if __name__ == "__main__":
         weights=cfg.cae_weights,
     )
 
-
     # visualization
+
+    pred_ae(
+        net=autoencoder,
+        weights=cfg.cae_weights,
+        directory=cfg.train_directory,
+    )
     viz.plot_pretrain_metrics(
         file=os.path.join(cfg.tables, cfg.exp, 'cae_train.csv'),
         save_dir=os.path.join(cfg.figures, cfg.exp, 'ae'),
@@ -101,8 +101,8 @@ if __name__ == "__main__":
         x_train,
         x_test
     )
-    viz.feature_map(scan=cfg.scans[0], exp=cfg.exp, layer=1, depth=16, weights=cfg.cae_weights)
-    viz.feature_map(scan=cfg.scans[0], exp=cfg.exp, layer=2, depth=32, weights=cfg.cae_weights)
-    viz.feature_map(scan=cfg.scans[0], exp=cfg.exp, layer=3, depth=32, weights=cfg.cae_weights)
+    # viz.feature_map(scan=cfg.scans[0], exp=cfg.exp, layer=1, depth=16, weights=cfg.cae_weights)
+    # viz.feature_map(scan=cfg.scans[0], exp=cfg.exp, layer=2, depth=32, weights=cfg.cae_weights)
+    # viz.feature_map(scan=cfg.scans[0], exp=cfg.exp, layer=3, depth=32, weights=cfg.cae_weights)
 
 

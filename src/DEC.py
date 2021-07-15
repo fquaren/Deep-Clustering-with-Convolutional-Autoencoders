@@ -32,12 +32,12 @@ def train_val_DEC(
         tables,
         exp,
         y_pred_last,
-        i
-            ):
+    ):
 
     # Init loss
     train_loss = [0, 0, 0]
-    val_loss = [0, 0, 0]
+    #val_loss = [0, 0, 0]
+    index = 0
 
     # Train and val
     for ite in tqdm(range(int(maxiter))):
@@ -45,8 +45,8 @@ def train_val_DEC(
 
             q = model.predict(x_train, verbose=0)
             p = target_distribution(q)
-            val_q = model.predict(x_val, verbose=0)
-            val_p = target_distribution(val_q)
+            # val_q = model.predict(x_val, verbose=0)
+            # val_p = target_distribution(val_q)
 
             # Evaluate the clustering performance
             y_train_pred = q.argmax(1)
@@ -81,29 +81,39 @@ def train_val_DEC(
                 encoder.save_weights(
                     os.path.join(path_models_dcec, 'dec_encoder_final.h5'))
                 break
-        
-        # Train on batch
-        x_train_batch = np.array(random.sample(list(x_train), dcec_bs))
-        train_p_batch = np.array(random.sample(list(p), dcec_bs))
-        train_loss = model.train_on_batch(
-            x=x_train_batch,
-            y=[train_p_batch, x_train_batch]
-        )
 
-        # Validation on batch
-        x_val_batch = np.array(random.sample(list(x_val), dcec_bs))
-        val_p_batch = np.array(random.sample(list(val_p), dcec_bs))
-        val_loss = model.test_on_batch(
-            x=x_val_batch,
-            y=[val_p_batch, x_val_batch]
-        )
+        if (index + 1) * dcec_bs > x_train.shape[0]:
+            train_loss = model.train_on_batch(x=x_train[index * dcec_bs::],
+                                                y=[p[index * dcec_bs::], x_train[index * dcec_bs::]])
+            index = 0
+        else:
+            train_loss = model.train_on_batch(x=x_train[index * dcec_bs:(index + 1) * dcec_bs],
+                                                y=[p[index * dcec_bs:(index + 1) * dcec_bs],
+                                                x_train[index * dcec_bs:(index + 1) * dcec_bs]])
+            index += 1
+        
+        # # Train on batch
+        # x_train_batch = np.array(random.sample(list(x_train), dcec_bs))
+        # train_p_batch = np.array(random.sample(list(p), dcec_bs))
+        # train_loss = model.train_on_batch(
+        #     x=x_train_batch,
+        #     y=[train_p_batch, x_train_batch]
+        # )
+
+        # # Validation on batch
+        # x_val_batch = np.array(random.sample(list(x_val), dcec_bs))
+        # val_p_batch = np.array(random.sample(list(val_p), dcec_bs))
+        # val_loss = model.test_on_batch(
+        #     x=x_val_batch,
+        #     y=[val_p_batch, x_val_batch]
+        # )
 
         # Save metrics to dict for csv
         dictionary['iteration'].append(ite)
         # dictionary['train_loss'].append(train_loss)
         # dictionary['val_loss'].append(val_loss[0])
         dictionary['clustering_loss'].append(train_loss)
-        dictionary['val_clustering_loss'].append(val_loss)
+        # dictionary['val_clustering_loss'].append(val_loss)
         # dictionary['reconstruction_loss'].append(train_loss[2])
         # dictionary['val_reconstruction_loss'].append(val_loss[2])
         # dictionary['train_acc'].append(train_acc)
@@ -162,55 +172,55 @@ def main():
     # )
     # model.summary()
 
-    pre_test_acc_list = []
-    pre_test_nmi_list = []
-    test_acc_list = []
-    test_nmi_list = []
+    # pre_test_acc_list = []
+    # pre_test_nmi_list = []
+    # test_acc_list = []
+    # test_nmi_list = []
+    # for i in range(50):
 
-    for i in range(50):
+    autoencoder.load_weights('/home/fquaren/unimib/tesi/models/DCEC_12_30emb/cae/cae_weights')
 
-        autoencoder.load_weights('/home/fquaren/unimib/tesi/models/DCEC_12_3emb/cae/cae_weights')
+    # for i in range(10):
+    clustering_layer = ClusteringLayer(n_clusters=3, name='clustering')(encoder.output)
+    model = Model(inputs=encoder.input, outputs=clustering_layer)
+    model.compile(
+        loss='kld',
+        optimizer=cfg.dcec_optim
+    )
+    model.summary()
 
-        clustering_layer = ClusteringLayer(n_clusters=3, name='clustering')(encoder.output)
-        model = Model(inputs=encoder.input, outputs=clustering_layer)
-        model.compile(
-            loss='kld',
-            #loss_weights=[cfg.gamma, 1],
-            optimizer=cfg.dcec_optim
-        )
-        model.summary()
+    y_pred_last, _, centers, pre_test_acc, pre_test_nmi = predict.init_kmeans(
+        x=x_train,
+        x_val=x_test,
+        y=y_train,
+        y_val=y_test,
+        random_state=None,
+        weights='/home/fquaren/unimib/tesi/models/DCEC_12_30emb/cae/cae_weights',
+    )
 
-        y_pred_last, _, _, pre_test_acc, pre_test_nmi = predict.init_kmeans(
-            x=x_train,
-            x_val=x_test,
-            y=y_train,
-            y_val=y_test,
-            random_state=None,
-            weights='/home/fquaren/unimib/tesi/models/DCEC_12_3emb/cae/cae_weights',
-        )
+    model.get_layer(name='clustering').set_weights([centers])
 
-        train_val_DEC(
-            exp=cfg.exp,
-            maxiter=cfg.maxiter,
-            update_interval=cfg.update_interval,
-            save_interval=cfg.save_interval,
-            x_train=x_train,
-            y_train=y_train,
-            x_val=x_val,
-            y_val=y_val,
-            model=model,
-            encoder=encoder,
-            tol=cfg.tol,
-            index=cfg.index,
-            dcec_bs=cfg.dcec_bs,
-            dictionary=cfg.dec_d,
-            path_models_dcec=os.path.join(cfg.models, cfg.exp, 'dec'),
-            tables=cfg.tables,
-            y_pred_last=y_pred_last,
-            i=i
-        )
+    train_val_DEC(
+        exp=cfg.exp,
+        maxiter=cfg.maxiter,
+        update_interval=cfg.update_interval,
+        save_interval=cfg.save_interval,
+        x_train=x_train,
+        y_train=y_train,
+        x_val=x_val,
+        y_val=y_val,
+        model=model,
+        encoder=encoder,
+        tol=cfg.tol,
+        index=cfg.index,
+        dcec_bs=cfg.dcec_bs,
+        dictionary=cfg.dec_d,
+        path_models_dcec=os.path.join(cfg.models, cfg.exp, 'dec'),
+        tables=cfg.tables,
+        y_pred_last=y_pred_last,
+    )
 
-        y_test_pred, _, _, test_acc, test_nmi = predict.init_kmeans(
+    y_test_pred, _, _, test_acc, test_nmi = predict.init_kmeans(
             model=model,
             x=x_train,
             x_val=x_test,
@@ -221,37 +231,37 @@ def main():
                 cfg.models, cfg.exp, 'dec', 'dec_model_final.h5'),
         )
 
-        pre_test_acc_list.append(pre_test_acc)
-        pre_test_nmi_list.append(pre_test_nmi)
-        test_acc_list.append(test_acc)
-        test_nmi_list.append(test_nmi)
+    # pre_test_acc_list.append(pre_test_acc)
+    # pre_test_nmi_list.append(pre_test_nmi)
+    # test_acc_list.append(test_acc)
+    # test_nmi_list.append(test_nmi)
 
-        print('MEAN PRE ACC:', np.mean(pre_test_acc_list))
-        print('STD PRE ACC:', np.std(pre_test_acc_list))
-        print('MEAN PRE NMI:', np.mean(pre_test_nmi_list))
-        print('STD PRE NMI:', np.std(pre_test_nmi_list))
+    # print('MEAN PRE ACC:', np.mean(pre_test_acc_list))
+    # print('STD PRE ACC:', np.std(pre_test_acc_list))
+    # print('MEAN PRE NMI:', np.mean(pre_test_nmi_list))
+    # print('STD PRE NMI:', np.std(pre_test_nmi_list))
 
-        print('MEAN ACC:', np.mean(test_acc_list))
-        print('STD ACC:', np.std(test_acc_list))
-        print('MEAN NMI:', np.mean(test_nmi_list))
-        print('STD NMI:', np.std(test_nmi_list))
+    # print('MEAN ACC:', np.mean(test_acc_list))
+    # print('STD ACC:', np.std(test_acc_list))
+    # print('MEAN NMI:', np.mean(test_nmi_list))
+    # print('STD NMI:', np.std(test_nmi_list))
 
-        print('MAX PRE ACC:', max(pre_test_acc_list))
-        print('MAX PRE NMI:', max(pre_test_nmi_list))
-        print('MAX ACC:', max(test_acc_list))
-        print('MAX NMI:', max(test_nmi_list))
+    # print('MAX PRE ACC:', max(pre_test_acc_list))
+    # print('MAX PRE NMI:', max(pre_test_nmi_list))
+    # print('MAX ACC:', max(test_acc_list))
+    # print('MAX NMI:', max(test_nmi_list))
 
-        print('min PRE ACC:', min(pre_test_acc_list))
-        print('min PRE NMI:', min(pre_test_nmi_list))
-        print('min ACC:', min(test_acc_list))
-        print('min NMI:', min(test_nmi_list))
-                                            
+    # print('min PRE ACC:', min(pre_test_acc_list))
+    # print('min PRE NMI:', min(pre_test_nmi_list))
+    # print('min ACC:', min(test_acc_list))
+    # print('min NMI:', min(test_nmi_list))
+                                        
     viz.plot_ae_tsne(
         encoder,
         os.path.join(cfg.models, cfg.exp, 'dec', 'dec_encoder_final.h5'),
         os.path.join(cfg.figures, cfg.exp),
         x_train,
-        x_test
+        x_test,
     )
     # viz.plot_confusion_matrix(y_test, y_test_pred)
     viz.plot_ae_umap(
@@ -259,7 +269,7 @@ def main():
         os.path.join(cfg.models, cfg.exp, 'dec', 'dec_encoder_final.h5'),
         os.path.join(cfg.figures, cfg.exp),
         x_train,
-        x_test
+        x_test,
     )
 
     print('done.')

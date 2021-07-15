@@ -26,9 +26,9 @@ tables = '/home/fquaren/unimib/tesi/data/tables'
 figures = '/home/fquaren/unimib/tesi/reports/figures'
 experiments = '/home/fquaren/unimib/tesi/experiments'
 
-exp = 'DCEC_12_10emb'
+exp = 'DCEC_12_3emb'
 
-best_acc_ae = 0.56
+# best_acc_ae = 0.61
 
 cae_models = os.path.join(models, exp, 'cae')
 cae_weights = os.path.join(models, exp, 'cae', 'cae_weights')
@@ -51,25 +51,25 @@ my_callbacks = [
 cae_optim = 'adam'
 
 # Train DCEC settings
-dcec_bs = 64
+dcec_bs = 32
 maxiter = 1000
-update_interval = 10
+update_interval = 20
 save_interval = update_interval
 tol = 0.001
-gamma = 0.001
+gamma = 0.01
 index = 0
 
-dcec_optim = Adam(learning_rate=1e-4)
+dcec_optim = 'adam' # Adam(learning_rate=1e-4)
 
 # Pandas dataframe
 d = {
     'iteration': [],
     'train_loss': [],
-    'val_loss': [],
+    # 'val_loss': [],
     'clustering_loss': [],
-    'val_clustering_loss': [],
+    # 'val_clustering_loss': [],
     'reconstruction_loss': [],
-    'val_reconstruction_loss': [],
+    # 'val_reconstruction_loss': [],
     # 'train_acc': [],
     # 'val_acc': [],
     # 'train_nmi': [],
@@ -83,7 +83,7 @@ dec_d = {
     # 'train_loss': [],
     # 'val_loss': [],
     'clustering_loss': [],
-    'val_clustering_loss': [],
+    # 'val_clustering_loss': [],
     # 'reconstruction_loss': [],
     # 'val_reconstruction_loss': [],
     # 'train_acc': [],
