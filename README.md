@@ -4,4 +4,4 @@ In this work we propose the baseline implementation of an unsupervised deep clus
 
 ![alt text](https://github.com/fquaren/Deep-Clustering-with-Convolutional-Autoencoders/blob/master/reports/figures/DEC.svg)
 
-![alt text](https://github.com/fquaren/Deep-Clustering-with-Convolutional-Autoencoders/blob/master/reports/figures/DCEC.png)
+![alt text](https://github.com/fquaren/Deep-Clustering-with-Convolutional-Autoencoders/blob/master/reports/figures/DCEC.svg)
