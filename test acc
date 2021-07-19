@@ -1,0 +1,33 @@
+5 EMB
+# CAE
+train loss 0.0020
+val loss 0.0019
+test acc 0.659  
+test nmi 0.522
+# DCEC
+mse loss 0.00231
+kl div 0.08767
+test acc 0.676
+test nmi 0.558
+# DEC
+kl div 0.00759
+test acc 0.654
+test nmi 0.53
+
+
+8 EMB
+# CAE
+train loss 0.0019
+val loss 0.0018
+test acc 0.632
+test nmi 0.471
+# DCEC
+mse loss 0.00191
+kl div 0.10575
+test acc 0.627
+test nmi 0.462
+# DEC
+kl div 0.10659
+test acc 0.630
+test nmi 0.479
+

@@ -21,7 +21,7 @@ tables = '/home/fquaren/unimib/tesi/data/tables'
 figures = '/home/fquaren/unimib/tesi/reports/figures'
 experiments = '/home/fquaren/unimib/tesi/experiments'
 
-exp = 'DCEC_12_3emb'
+exp = 'DCEC_8emb'
 
 cae_models = os.path.join(models, exp, 'cae')
 cae_weights = os.path.join(models, exp, 'cae', 'cae_weights')
@@ -44,7 +44,7 @@ cae_optim = 'adam'
 
 # Finetuning settings
 dcec_bs = 32
-maxiter = 1000
+maxiter = 10000000
 update_interval = 20
 save_interval = update_interval
 tol = 0.001

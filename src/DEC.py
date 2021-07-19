@@ -53,7 +53,7 @@ def train_val_DEC(
             delta_label = np.sum(y_train_pred != y_pred_last).astype(
                 np.float32) / y_train_pred.shape[0]
             y_pred_last = np.copy(y_train_pred)
-            if ite > 0 and delta_label < tol:
+            if ite > 0 and delta_label < tol or ite > cfg.maxiter:
                 print('delta_label ', delta_label, '< tol ', tol)
                 print('Reached tolerance threshold. Stopping training.')
                 # Save the trained model
@@ -121,8 +121,7 @@ def main():
 
     autoencoder, encoder = cfg.cae
 
-    autoencoder.load_weights(
-        '/home/fquaren/unimib/tesi/models/DCEC_12_30emb/cae/cae_weights')
+    autoencoder.load_weights(cfg.cae_weights)
 
     # for i in range(10):
     clustering_layer = ClusteringLayer(
@@ -140,7 +139,7 @@ def main():
         y=y_train,
         y_val=y_test,
         random_state=None,
-        weights=os.path.join(cfg.models, 'DCEC_12_30emb/cae/cae_weights'),
+        weights=os.path.join(cfg.models, 'DCEC_8emb/cae/cae_weights'),
     )
 
     model.get_layer(name='clustering').set_weights([centers])
@@ -152,8 +151,6 @@ def main():
         save_interval=cfg.save_interval,
         x_train=x_train,
         y_train=y_train,
-        x_val=x_val,
-        y_val=y_val,
         model=model,
         encoder=encoder,
         tol=cfg.tol,

@@ -56,7 +56,7 @@ def train_val_DCEC(
             delta_label = np.sum(y_train_pred != y_pred_last).astype(
                 np.float32) / y_train_pred.shape[0]
             y_pred_last = np.copy(y_train_pred)
-            if ite > 0 and delta_label < tol:
+            if ite > 0 and delta_label < tol or ite > cfg.maxiter:
                 print('delta_label ', delta_label, '< tol ', tol)
                 print('Reached tolerance threshold. Stopping training.')
                 # Save the trained model
